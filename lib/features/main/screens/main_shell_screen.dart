@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
-import '../../my_stay/screens/my_stay_screen.dart';
+import '../../activities/screens/activities_screen.dart';
+import '../../profile/screens/profile_screen.dart';
 import '../../more/screens/more_screen.dart';
 
-/// Main shell with bottom navigation containing 3 tabs:
-/// 1. Home (Dashboard)
-/// 2. My Stay
-/// 3. More
 class MainShellScreen extends StatefulWidget {
   const MainShellScreen({super.key});
 
@@ -20,7 +17,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   final List<Widget> _screens = [
     const DashboardScreen(),
-    const MyStayScreen(),
+    const ActivitiesScreen(),
+    const ProfileScreen(),
     const MoreScreen(),
   ];
 
@@ -72,9 +70,14 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 label: 'Home',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.hotel_outlined),
-                activeIcon: Icon(Icons.hotel),
-                label: 'My Stay',
+                icon: Icon(Icons.explore_outlined),
+                activeIcon: Icon(Icons.explore),
+                label: 'Activities',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outlined),
+                activeIcon: Icon(Icons.person),
+                label: 'Profile',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.menu_outlined),

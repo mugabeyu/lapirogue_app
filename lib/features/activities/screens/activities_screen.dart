@@ -1,10 +1,13 @@
-import 'package:flutter/foundation.dart';
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/activity_service.dart';
+import '../../../core/models/activity.dart';
+import '../../../core/models/activity_booking.dart';
 import '../../../core/theme/app_theme.dart';
 
-/// Activities & Tours Screen
 class ActivitiesScreen extends StatefulWidget {
   const ActivitiesScreen({super.key});
 
@@ -13,10 +16,9 @@ class ActivitiesScreen extends StatefulWidget {
 }
 
 class _ActivitiesScreenState extends State<ActivitiesScreen> {
-  List<Map<String, dynamic>> _activities = [];
-  List<Map<String, dynamic>> _myBookings = [];
+  List<Activity> _activities = [];
+  List<ActivityBooking> _myBookings = [];
   bool _isLoading = true;
-  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -35,15 +37,9 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   }
 
   Future<void> _loadActivities() async {
-    try {
-      final response = await SupabaseService.client
-          .from('activities')
-          .select('*')
-          .eq('status', 'ACTIVE')
-          .order('name');
-      setState(() => _activities = List<Map<String, dynamic>>.from(response));
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error loading activities: $e');
+    final activities = await ActivityService().getAvailableActivities();
+    if (mounted) {
+      setState(() => _activities = activities);
     }
   }
 
@@ -51,37 +47,76 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
     final guestId = await SupabaseService.getCurrentGuestId();
     if (guestId == null) return;
 
-    try {
-      final response = await SupabaseService.client
-          .from('activity_bookings')
-          .select('*, activities(*)')
-          .eq('guest_id', guestId)
-          .order('booking_date', ascending: false);
-      setState(() => _myBookings = List<Map<String, dynamic>>.from(response));
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error loading bookings: $e');
+    final bookings = await ActivityService().getMyBookings(guestId);
+    if (mounted) {
+      setState(() => _myBookings = bookings);
+    }
+  }
+
+  Future<void> _bookActivity(Activity activity) async {
+    final guestId = await SupabaseService.getCurrentGuestId();
+    if (guestId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Book ${activity.name}'),
+        content: Text('Confirm booking for ${DateFormat('MMM d, yyyy').format(DateTime.now())}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Book Now'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final success = await ActivityService().bookActivity(
+      activityId: activity.id,
+      guestId: guestId,
+      bookingDate: DateTime.now(),
+      participants: 1,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success 
+              ? 'Activity booked successfully! Eco points will be awarded.' 
+              : 'Failed to book activity. Please try again.'),
+          backgroundColor: success ? AppTheme.accentGreen : AppTheme.accentRed,
+        ),
+      );
+      if (success) _loadMyBookings();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Activities & Tours'),
-        bottom: TabBar(
-          controller: TabController(length: 2, vsync: Navigator.of(context)),
-          tabs: const [
-            Tab(text: 'Available', icon: Icon(Icons.explore)),
-            Tab(text: 'My Bookings', icon: Icon(Icons.bookmark)),
-          ],
-          onTap: (index) => setState(() => _selectedTab = index),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Activities & Tours'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Available', icon: Icon(Icons.explore)),
+              Tab(text: 'My Bookings', icon: Icon(Icons.bookmark)),
+            ],
+          ),
         ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                children: [
+                  _buildActivitiesList(),
+                  _buildBookingsList(),
+                ],
+              ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _selectedTab == 0
-              ? _buildActivitiesList()
-              : _buildBookingsList(),
     );
   }
 
@@ -132,33 +167,10 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
       },
     );
   }
-
-  Future<void> _bookActivity(Map<String, dynamic> activity) async {
-    // Implement booking logic
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Book Activity'),
-        content: Text('Book ${activity['name']}?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Booking request sent!')),
-              );
-            },
-            child: const Text('Book'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _ActivityCard extends StatelessWidget {
-  final Map<String, dynamic> activity;
+  final Activity activity;
   final VoidCallback onBook;
 
   const _ActivityCard({required this.activity, required this.onBook});
@@ -172,14 +184,15 @@ class _ActivityCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (activity['image_path'] != null)
+          if (activity.imagePath != null)
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
-                activity['image_path'],
+                activity.imagePath!,
                 height: 150,
                 width: double.infinity,
                 fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
               ),
             ),
           Padding(
@@ -188,7 +201,7 @@ class _ActivityCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  activity['name'] ?? 'Unnamed Activity',
+                  activity.name,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -196,7 +209,7 @@ class _ActivityCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  activity['description'] ?? 'No description available',
+                  activity.description ?? 'No description available',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppTheme.textSecondary,
@@ -210,14 +223,14 @@ class _ActivityCard extends StatelessWidget {
                     Icon(Icons.access_time, size: 16, color: AppTheme.textSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      '${activity['duration'] ?? 60} min',
+                      '${activity.duration} min',
                       style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                     ),
                     const SizedBox(width: 16),
                     Icon(Icons.attach_money, size: 16, color: AppTheme.textSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      'Rs ${activity['price'] ?? 0}',
+                      'Rs ${activity.price}',
                       style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                     ),
                   ],
@@ -240,15 +253,29 @@ class _ActivityCard extends StatelessWidget {
 }
 
 class _BookingCard extends StatelessWidget {
-  final Map<String, dynamic> booking;
+  final ActivityBooking booking;
 
   const _BookingCard({required this.booking});
 
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'CONFIRMED':
+        return AppTheme.accentGreen;
+      case 'PENDING':
+        return AppTheme.accentOrange;
+      case 'CANCELLED':
+        return AppTheme.accentRed;
+      case 'COMPLETED':
+        return AppTheme.primary;
+      default:
+        return AppTheme.textSecondary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final activity = booking['activities'] ?? {};
-    final bookingDate = DateTime.parse(booking['booking_date'] ?? DateTime.now().toIso8601String());
-    final status = booking['status'] ?? 'CONFIRMED';
+    final activity = booking.activity;
+    final status = booking.status;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -264,7 +291,7 @@ class _BookingCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    activity['name'] ?? 'Unnamed Activity',
+                    activity?.name ?? 'Unnamed Activity',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -294,26 +321,26 @@ class _BookingCard extends StatelessWidget {
                 Icon(Icons.calendar_today, size: 14, color: AppTheme.textSecondary),
                 const SizedBox(width: 4),
                 Text(
-                  DateFormat('MMM d, yyyy').format(bookingDate),
+                  DateFormat('MMM d, yyyy').format(booking.bookingDate),
                   style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                 ),
                 const SizedBox(width: 16),
                 Icon(Icons.access_time, size: 14, color: AppTheme.textSecondary),
                 const SizedBox(width: 4),
                 Text(
-                  booking['booking_time'] ?? '09:00',
+                  booking.bookingTime ?? '09:00',
                   style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                 ),
               ],
             ),
-            if (booking['participants'] != null) ...[
+            if (booking.participants > 1) ...[
               const SizedBox(height: 4),
               Row(
                 children: [
                   Icon(Icons.people, size: 14, color: AppTheme.textSecondary),
                   const SizedBox(width: 4),
                   Text(
-                    '${booking['participants']} participants',
+                    '${booking.participants} participants',
                     style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                   ),
                 ],
@@ -324,19 +351,5 @@ class _BookingCard extends StatelessWidget {
       ),
     );
   }
-
-  Color _getStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'CONFIRMED':
-        return AppTheme.accentGreen;
-      case 'PENDING':
-        return AppTheme.accentOrange;
-      case 'CANCELLED':
-        return AppTheme.accentRed;
-      case 'COMPLETED':
-        return AppTheme.primary;
-      default:
-        return AppTheme.textSecondary;
-    }
-  }
 }
+

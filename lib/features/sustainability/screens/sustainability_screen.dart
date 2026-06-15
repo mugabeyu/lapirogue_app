@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/activity_service.dart';
+import '../../../core/models/eco_points_transaction.dart';
 import '../../../core/theme/app_theme.dart';
+import 'leaderboard_screen.dart';
 
-/// Sustainability Program Screen
 class SustainabilityScreen extends StatefulWidget {
   const SustainabilityScreen({super.key});
 
@@ -12,8 +14,9 @@ class SustainabilityScreen extends StatefulWidget {
 }
 
 class _SustainabilityScreenState extends State<SustainabilityScreen> {
-  Map<String, dynamic>? _ecoData;
-  List<Map<String, dynamic>> _transactions = [];
+  int _points = 0;
+  String _tier = 'Bronze';
+  List<EcoPointsTransaction> _transactions = [];
   bool _isLoading = true;
 
   @override
@@ -30,23 +33,16 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
     }
 
     try {
-      // Get eco points balance
-      final balanceResponse = await SupabaseService.client
-          .from('eco_points_balance')
-          .select('*')
-          .eq('guest_id', guestId)
-          .maybeSingle();
-
-      // Get eco points transactions
-      final txResponse = await SupabaseService.client
-          .from('eco_points_tx')
-          .select('*')
-          .eq('guest_id', guestId)
-          .order('created_at', ascending: false);
+      final results = await Future.wait([
+        EcoPointsService().getEcoPointsBalance(guestId),
+        EcoPointsService().getEcoPointsTier(guestId),
+        EcoPointsService().getTransactions(guestId),
+      ]);
 
       setState(() {
-        _ecoData = balanceResponse ?? {'points': 0, 'tier': 'Bronze'};
-        _transactions = List<Map<String, dynamic>>.from(txResponse);
+        _points = results[0] as int;
+        _tier = results[1] as String;
+        _transactions = results[2] as List<EcoPointsTransaction>;
         _isLoading = false;
       });
     } catch (e) {
@@ -96,11 +92,24 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
     }
   }
 
+  void _navigateToLeaderboard() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sustainability Program'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.emoji_events),
+            onPressed: _navigateToLeaderboard,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -111,7 +120,6 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Points Card
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
@@ -150,7 +158,7 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${_ecoData?['points'] ?? 0}',
+                            '$_points',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 48,
@@ -172,12 +180,12 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
                               children: [
                                 Icon(
                                   Icons.emoji_events,
-                                  color: _getTierColor(_ecoData?['tier'] ?? 'Bronze'),
+                                  color: _getTierColor(_tier),
                                   size: 20,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  '${_ecoData?['tier'] ?? 'Bronze'} Tier',
+                                  '$_tier Tier',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
@@ -191,7 +199,6 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // How to Earn Points
                     Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
@@ -236,7 +243,6 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Transaction History
                     if (_transactions.isNotEmpty) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -249,9 +255,7 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
-                              // Show all transactions
-                            },
+                            onPressed: () {},
                             child: const Text('View All'),
                           ),
                         ],
@@ -313,11 +317,11 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
     );
   }
 
-  Widget _buildTransactionCard(Map<String, dynamic> tx) {
-    final type = tx['tx_type'] ?? 'EARN';
-    final points = tx['points'] ?? 0;
-    final description = tx['description'] ?? 'Activity';
-    final createdAt = DateTime.parse(tx['created_at'] ?? DateTime.now().toIso8601String());
+  Widget _buildTransactionCard(EcoPointsTransaction tx) {
+    final type = tx.txType;
+    final points = tx.points;
+    final description = tx.description ?? 'Activity';
+    final createdAt = tx.createdAt ?? DateTime.now();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

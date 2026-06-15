@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/supabase_service.dart';
+import '../../../core/services/message_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/notification.dart' as model;
 import 'package:intl/intl.dart';
 
-/// Notifications Screen
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -13,7 +14,7 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<Map<String, dynamic>> _notifications = [];
+  List<model.Notification> _notifications = [];
   bool _isLoading = true;
 
   @override
@@ -30,14 +31,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     try {
-      final response = await SupabaseService.client
-          .from('notifications')
-          .select('*')
-          .eq('guest_id', guestId)
-          .order('created_at', ascending: false);
-
+      final notifications = await NotificationService().getNotifications(guestId);
       setState(() {
-        _notifications = List<Map<String, dynamic>>.from(response);
+        _notifications = notifications;
         _isLoading = false;
       });
     } catch (e) {
@@ -46,21 +42,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _markAsRead(String notificationId) async {
-    try {
-      await SupabaseService.client
-          .from('notifications')
-          .update({'is_read': true})
-          .eq('id', notificationId);
-      
+  Future<void> _markAsRead(model.Notification notification) async {
+    if (notification.isRead) return;
+
+    final success = await NotificationService().markAsRead(notification.id);
+    if (success) {
       setState(() {
-        final index = _notifications.indexWhere((n) => n['id'] == notificationId);
+        final index = _notifications.indexWhere((n) => n.id == notification.id);
         if (index != -1) {
-          _notifications[index]['is_read'] = true;
+          _notifications[index] = model.Notification(
+            id: notification.id,
+            guestId: notification.guestId,
+            title: notification.title,
+            message: notification.message,
+            category: notification.category,
+            isRead: true,
+            createdAt: notification.createdAt,
+          );
         }
       });
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error marking as read: $e');
     }
   }
 
@@ -68,20 +68,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final guestId = await SupabaseService.getCurrentGuestId();
     if (guestId == null) return;
 
-    try {
-      await SupabaseService.client
-          .from('notifications')
-          .update({'is_read': true})
-          .eq('guest_id', guestId)
-          .eq('is_read', false);
-      
+    final success = await NotificationService().markAllAsRead(guestId);
+    if (success) {
       setState(() {
-        for (var notification in _notifications) {
-          notification['is_read'] = true;
+        for (var i = 0; i < _notifications.length; i++) {
+          _notifications[i] = model.Notification(
+            id: _notifications[i].id,
+            guestId: _notifications[i].guestId,
+            title: _notifications[i].title,
+            message: _notifications[i].message,
+            category: _notifications[i].category,
+            isRead: true,
+            createdAt: _notifications[i].createdAt,
+          );
         }
       });
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error marking all as read: $e');
     }
   }
 
@@ -121,7 +122,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final unreadCount = _notifications.where((n) => !(n['is_read'] ?? true)).length;
+    final unreadCount = _notifications.where((n) => !n.isRead).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -168,17 +169,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationCard(Map<String, dynamic> notification) {
-    final isRead = notification['is_read'] ?? true;
-    final category = notification['category'] ?? 'General';
-    final createdAt = DateTime.parse(notification['created_at'] ?? DateTime.now().toIso8601String());
+  Widget _buildNotificationCard(model.Notification notification) {
+    final isRead = notification.isRead;
+    final category = notification.category;
+    final createdAt = notification.createdAt ?? DateTime.now();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: isRead ? 1 : 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => _markAsRead(notification['id']),
+        onTap: () => _markAsRead(notification),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -206,7 +207,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            notification['title'] ?? 'Notification',
+                            notification.title,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
@@ -227,7 +228,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      notification['message'] ?? '',
+                      notification.message,
                       style: TextStyle(
                         fontSize: 14,
                         color: AppTheme.textSecondary,

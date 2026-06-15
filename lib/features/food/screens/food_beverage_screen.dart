@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/services/supabase_service.dart';
+import '../../../core/services/guest_service.dart';
+import '../../../core/services/food_service.dart';
+import '../../../core/models/menu_item.dart';
+import '../../../core/models/food_order.dart';
 import '../../../core/theme/app_theme.dart';
 
-/// Food & Beverage Screen
 class FoodBeverageScreen extends StatefulWidget {
   const FoodBeverageScreen({super.key});
 
@@ -12,10 +13,9 @@ class FoodBeverageScreen extends StatefulWidget {
 }
 
 class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
-  List<Map<String, dynamic>> _menuItems = [];
-  List<Map<String, dynamic>> _orders = [];
+  List<MenuItem> _menuItems = [];
+  List<FoodOrder> _orders = [];
   bool _isLoading = true;
-  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -34,53 +34,90 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
   }
 
   Future<void> _loadMenuItems() async {
-    try {
-      final response = await SupabaseService.client
-          .from('menu_items')
-          .select('*')
-          .eq('is_available', true)
-          .order('category');
-      setState(() => _menuItems = List<Map<String, dynamic>>.from(response));
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error loading menu: $e');
+    final items = await FoodService().getMenuItems();
+    if (mounted) {
+      setState(() => _menuItems = items);
     }
   }
 
   Future<void> _loadOrders() async {
-    final guestId = await SupabaseService.getCurrentGuestId();
+    final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) return;
 
-    try {
-      final response = await SupabaseService.client
-          .from('food_orders')
-          .select('*')
-          .eq('guest_id', guestId)
-          .order('created_at', ascending: false);
-      setState(() => _orders = List<Map<String, dynamic>>.from(response));
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error loading orders: $e');
+    final orders = await FoodService().getMyOrders(guestId);
+    if (mounted) {
+      setState(() => _orders = orders);
+    }
+  }
+
+  Future<void> _placeOrder(MenuItem item, int quantity) async {
+    final guestId = await GuestService().getCurrentGuestId();
+    if (guestId == null) return;
+
+    // Get room ID from active reservation
+    final guest = await GuestService().getCurrentGuest();
+    final roomId = guest?.reservations?.isNotEmpty == true 
+        ? guest!.reservations![0].roomId 
+        : null;
+
+    if (roomId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No active room assignment')),
+        );
+      }
+      return;
+    }
+
+    final success = await FoodService().placeOrder(
+      guestId: guestId,
+      roomId: roomId,
+      items: [
+        {
+          'name': item.name,
+          'price': item.price,
+          'quantity': quantity,
+        }
+      ],
+      subtotal: item.price * quantity,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success 
+              ? 'Order placed successfully!' 
+              : 'Failed to place order'),
+          backgroundColor: success ? AppTheme.accentGreen : AppTheme.accentRed,
+        ),
+      );
+      if (success) _loadOrders();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Food & Beverage'),
-        bottom: TabBar(
-          controller: TabController(length: 2, vsync: Navigator.of(context)),
-          tabs: const [
-            Tab(text: 'Menu', icon: Icon(Icons.menu_book)),
-            Tab(text: 'My Orders', icon: Icon(Icons.receipt)),
-          ],
-          onTap: (index) => setState(() => _selectedTab = index),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Food & Beverage'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Menu', icon: Icon(Icons.menu_book)),
+              Tab(text: 'My Orders', icon: Icon(Icons.receipt)),
+            ],
+          ),
         ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                children: [
+                  _buildMenuList(),
+                  _buildOrdersList(),
+                ],
+              ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _selectedTab == 0
-              ? _buildMenuList()
-              : _buildOrdersList(),
     );
   }
 
@@ -89,20 +126,20 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
       return const Center(child: Text('No menu items available'));
     }
 
-    final categories = _menuItems.map((i) => i['category'] as String).toSet().toList();
+    final categories = _menuItems.map((i) => i.category).toSet().toList();
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
-        final items = _menuItems.where((i) => i['category'] == category).toList();
+        final items = _menuItems.where((i) => i.category == category).toList();
         return _buildCategorySection(category, items);
       },
     );
   }
 
-  Widget _buildCategorySection(String category, List<Map<String, dynamic>> items) {
+  Widget _buildCategorySection(String category, List<MenuItem> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -121,40 +158,45 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
     );
   }
 
-  Widget _buildMenuItemCard(Map<String, dynamic> item) {
+  Widget _placeholderImage() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Icon(Icons.restaurant, color: AppTheme.primary),
+    );
+  }
+
+  Widget _buildMenuItemCard(MenuItem item) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: item['image_path'] != null
+        leading: item.imagePath != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  item['image_path'],
+                  item.imagePath!,
                   width: 56,
                   height: 56,
                   fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _placeholderImage(),
                 ),
               )
-            : Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.restaurant, color: AppTheme.primary),
-              ),
+            : _placeholderImage(),
         title: Text(
-          item['name'] ?? 'Unnamed Item',
+          item.name,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          item['description'] ?? 'No description',
+          item.description ?? 'No description',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
         trailing: Text(
-          'Rs ${item['price'] ?? 0}',
+          'Rs ${item.price}',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -181,11 +223,11 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
     );
   }
 
-  Widget _buildOrderCard(Map<String, dynamic> order) {
-    final status = order['status'] ?? 'PENDING';
-    final total = order['total'] ?? 0;
-    final orderId = order['order_id'] ?? 'Unknown';
-    final createdAt = DateTime.parse(order['created_at'] ?? DateTime.now().toIso8601String());
+  Widget _buildOrderCard(FoodOrder order) {
+    final status = order.status;
+    final total = order.total;
+    final orderId = order.orderId;
+    final createdAt = order.createdAt ?? DateTime.now();
 
     Color statusColor;
     switch (status.toUpperCase()) {
@@ -241,7 +283,7 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Placed on ${createdAt.day}/${createdAt.month}/${createdAt.year} at ${createdAt.hour}:${createdAt.minute.toString().padLeft(2, '0')}',
+              'Placed on ${createdAt.day}/${createdAt.month}/${createdAt.year}',
               style: TextStyle(
                 fontSize: 13,
                 color: AppTheme.textSecondary,
@@ -274,17 +316,17 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
     );
   }
 
-  void _showOrderDialog(Map<String, dynamic> item) {
+  void _showOrderDialog(MenuItem item) {
     int quantity = 1;
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text('Order ${item['name']}'),
+          title: Text('Order ${item.name}'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Price: Rs ${item['price']}'),
+              Text('Price: Rs ${item.price}'),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -302,7 +344,7 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Total: Rs ${(item['price'] ?? 0) * quantity}',
+                'Total: Rs ${(item.price) * quantity}',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ],
@@ -315,9 +357,7 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Ordered ${item['name']} x$quantity')),
-                );
+                _placeOrder(item, quantity);
               },
               child: const Text('Order'),
             ),
@@ -327,3 +367,11 @@ class _FoodBeverageScreenState extends State<FoodBeverageScreen> {
     );
   }
 }
+
+
+
+
+
+
+
+

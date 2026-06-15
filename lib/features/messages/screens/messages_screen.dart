@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/services/supabase_service.dart';
-import '../../../core/theme/app_theme.dart';
 import 'package:intl/intl.dart';
+import '../../../core/services/supabase_service.dart';
+import '../../../core/services/message_service.dart';
+import '../../../core/theme/app_theme.dart';
 
-/// Messages Screen - Guest to Admin chat
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
 
@@ -13,7 +13,7 @@ class MessagesScreen extends StatefulWidget {
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
-  List<Map<String, dynamic>> _messages = [];
+  List<dynamic> _messages = [];
   bool _isLoading = true;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -39,18 +39,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
     }
 
     try {
-      final response = await SupabaseService.client
-          .from('messages')
-          .select('*')
-          .eq('guest_id', guestId)
-          .order('created_at', ascending: true);
-
+      final messages = await MessageService().getMessages(guestId);
       setState(() {
-        _messages = List<Map<String, dynamic>>.from(response);
+        _messages = messages;
         _isLoading = false;
       });
 
-      // Scroll to bottom
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -74,15 +68,21 @@ class _MessagesScreenState extends State<MessagesScreen> {
     if (guestId == null) return;
 
     try {
-      await SupabaseService.client.from('messages').insert({
-        'guest_id': guestId,
-        'content': message,
-        'sender_type': 'guest',
-        'is_read': false,
-      });
+      final success = await MessageService().sendMessage(
+        guestId: guestId,
+        content: message,
+      );
 
-      _messageController.clear();
-      await _loadMessages();
+      if (success) {
+        _messageController.clear();
+        await _loadMessages();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to send message')),
+          );
+        }
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('Error sending message: $e');
       if (mounted) {
@@ -109,7 +109,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Messages list
                 Expanded(
                   child: _messages.isEmpty
                       ? Center(
@@ -146,9 +145,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           itemCount: _messages.length,
                           itemBuilder: (context, index) {
                             final message = _messages[index];
-                            final isGuest = message['sender_type'] == 'guest';
+                            final isGuest = message.senderType == 'guest';
                             final showAvatar = index == 0 ||
-                                _messages[index - 1]['sender_type'] != message['sender_type'];
+                                _messages[index - 1].senderType != message.senderType;
 
                             return _buildMessageBubble(
                               message: message,
@@ -159,7 +158,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
                         ),
                 ),
 
-                // Input field
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -212,11 +210,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Widget _buildMessageBubble({
-    required Map<String, dynamic> message,
+    required dynamic message,
     required bool isGuest,
     required bool showAvatar,
   }) {
-    final createdAt = DateTime.parse(message['created_at'] ?? DateTime.now().toIso8601String());
+    final createdAt = message.createdAt ?? DateTime.now();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -264,7 +262,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    message['content'] ?? '',
+                    message.content,
                     style: TextStyle(
                       fontSize: 14,
                       color: isGuest ? Colors.white : AppTheme.textPrimary,
