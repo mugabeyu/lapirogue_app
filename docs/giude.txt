@@ -1,0 +1,441 @@
+# PART 2 – FLUTTER GUEST MOBILE APPLICATION IMPLEMENTATION REQUIREMENTS
+
+The Hotel Management System (Part 1) has already been completed using Next.js and Supabase.
+
+The objective of Part 2 is to develop a Flutter Mobile Application for hotel guests. The mobile application must integrate directly with the existing Supabase database and follow the same architecture used throughout the system.
+
+---
+
+# IMPORTANT AUTHENTICATION REQUIREMENT
+
+Guests must NOT exist only as records inside the `guests` table.
+
+Every guest who is expected to access the mobile application must also have a corresponding account inside Supabase Authentication (`auth.users`).
+
+The system must therefore maintain:
+
+1. A guest record in the `guests` table.
+2. A user account in Supabase Authentication.
+3. A relationship between the two through an `auth_id` field.
+
+The `guests` table must contain:
+
+```sql
+auth_id UUID UNIQUE
+```
+
+The value of `auth_id` must always match the corresponding user's ID from Supabase Authentication.
+
+Example:
+
+```text
+auth.users
+---------------------------------
+id: 8f45a112-xxxx-xxxx-xxxx
+email: johnsmith@gmail.com
+
+guests
+---------------------------------
+guest_id: G0001
+first_name: John
+last_name: Smith
+auth_id: 8f45a112-xxxx-xxxx-xxxx
+```
+
+This ensures that every guest using the mobile application has a secure authenticated account.
+
+---
+
+# AUTOMATIC GUEST ACCOUNT CREATION
+
+Guest accounts shall be created automatically.
+
+Receptionists and administrators must never manually create passwords or authentication accounts.
+
+When:
+
+1. A guest is registered.
+2. A reservation is created.
+3. A room is assigned.
+
+The system shall automatically:
+
+### Step 1
+
+Create the guest record.
+
+### Step 2
+
+Create a Supabase Authentication account.
+
+### Step 3
+
+Generate and store the `auth_id`.
+
+### Step 4
+
+Update the guest record with the generated `auth_id`.
+
+### Step 5
+
+Generate a temporary password.
+
+Password Format:
+
+```text
+LastName + RoomNumber + "@lapirogue"
+```
+
+Example:
+
+```text
+Smith205@lapirogue
+```
+
+### Step 6
+
+Send an automated email containing:
+
+* Welcome message
+* Mobile application information
+* Login email
+* Temporary password
+* Instructions for first login
+
+---
+
+# FIRST LOGIN REQUIREMENT
+
+When a guest logs in for the first time:
+
+* Authentication shall be performed through Supabase Authentication.
+* The guest shall be required to change the temporary password.
+* Access to the application shall only be granted after a successful password change.
+
+The mobile application shall include:
+
+* Change Password
+* Forgot Password
+* Password Reset via Email
+* Secure Logout
+
+---
+
+# SECURITY REQUIREMENTS
+
+The system shall use Supabase Authentication and Row Level Security (RLS).
+
+Guests shall only be able to access information associated with their own account.
+
+All guest-related tables must be protected using RLS policies based on:
+
+```sql
+auth.uid() = auth_id
+```
+
+or equivalent guest ownership rules.
+
+Guests must never be able to access:
+
+* Other guest profiles
+* Other guest reservations
+* Other guest schedules
+* Other guest payments
+* Other guest messages
+* Other guest feedback
+
+---
+
+# MOBILE APPLICATION FEATURES
+
+After successful authentication, guests shall have access to the following modules.
+
+---
+
+# 1. Dashboard
+
+Display:
+
+* Guest Name
+* Room Number
+* Room Type
+* Reservation Status
+* Check-in Date
+* Check-out Date
+* Today's Activities
+* Upcoming Activities
+* Notifications Summary
+* Outstanding Charges
+
+---
+
+# 2. My Stay
+
+Display:
+
+## Personal Information
+
+* Full Name
+* Email Address
+* Phone Number
+* Nationality
+
+## Reservation Information
+
+* Reservation Number
+* Reservation Status
+* Check-in Date
+* Check-out Date
+* Number of Adults
+* Number of Children
+
+## Room Information
+
+* Room Number
+* Room Type
+* Room Status
+* Amenities
+
+---
+
+# 3. Daily Schedule
+
+Retrieve guest schedule items from:
+
+* guest_schedule_items
+* itinerary_events
+
+Features:
+
+* View Today's Schedule
+* View Upcoming Schedule
+* View Schedule History
+* Timeline View
+* Mark Activity as Completed
+
+Display:
+
+* Activity Name
+* Date
+* Time
+* Location
+* Description
+* Status
+
+---
+
+# 4. Activities & Tours
+
+Retrieve data from:
+
+* activities
+* activity_bookings
+
+Features:
+
+* View Booked Activities
+* View Activity Details
+* Confirm Attendance
+* Mark Activity as Completed
+* View Activity History
+
+Display:
+
+* Activity Name
+* Date
+* Time
+* Duration
+* Location
+* Cost
+* Booking Status
+* Payment Status
+
+---
+
+# 5. Food & Beverage Consumption
+
+Retrieve data from:
+
+* food_orders
+* guest_orders
+* menu_items
+
+Features:
+
+* View Active Orders
+* View Completed Orders
+* View Order History
+
+Display:
+
+* Order Number
+* Ordered Items
+* Quantity
+* Price
+* Order Status
+* Total Amount
+
+---
+
+# 6. Payments & Billing
+
+Retrieve data from:
+
+* payments
+* payment_extra_items
+
+Features:
+
+* View Payment History
+* View Outstanding Balance
+* View Charges
+* View Invoice Details
+
+Display:
+
+* Payment Date
+* Payment Method
+* Payment Status
+* Amount Paid
+* Remaining Balance
+
+Additional Charges:
+
+* Laundry
+* Transportation
+* Room Service
+* Mini Bar
+* Activities
+* Other Hotel Services
+
+---
+
+# 7. Notifications
+
+Retrieve data from:
+
+* notifications
+
+Features:
+
+* View Notifications
+* Mark Notifications as Read
+* Notification History
+
+Notification Types:
+
+* Activity Reminders
+* Reservation Updates
+* Schedule Changes
+* Billing Updates
+* Hotel Announcements
+* Emergency Alerts
+
+---
+
+# 8. Messaging
+
+Retrieve data from:
+
+* messages
+
+Features:
+
+* Send Messages
+* Receive Replies
+* Real-Time Messaging
+* Conversation History
+
+Communication Targets:
+
+* Reception
+* Housekeeping
+* Restaurant
+* Activities Department
+* Guest Services
+
+---
+
+# 9. Feedback & Reviews
+
+Retrieve and store data in:
+
+* guest_feedback
+
+Features:
+
+* Submit Ratings
+* Submit Reviews
+* Submit Suggestions
+* Evaluate Activities
+* Evaluate Hotel Services
+
+---
+
+# 10. Emergency Contacts
+
+Retrieve data from:
+
+* emergency_contacts
+
+Features:
+
+* One-Tap Calling
+* Emergency Information Access
+
+Display:
+
+* Reception
+* Security
+* Medical Services
+* Fire Services
+* Hotel Management
+
+---
+
+# 11. Sustainability Program
+
+Retrieve data from:
+
+* sustainability_activities
+* guest_eco_point_events
+* eco_points_balance
+* eco_points_tx
+
+Features:
+
+* View Eco Points
+* View Rewards
+* View Sustainability Activities
+* View Transaction History
+* View Achievements
+
+---
+
+# MOBILE APPLICATION SCREENS
+
+1. Splash Screen
+2. Login Screen
+3. Forgot Password Screen
+4. Change Password Screen
+5. Dashboard
+6. My Stay
+7. Daily Schedule
+8. Activities & Tours
+9. Food & Beverage
+10. Payments & Billing
+11. Notifications
+12. Messaging
+13. Feedback
+14. Emergency Contacts
+15. Sustainability Program
+16. Settings
+17. Logout
+
+---
+
+# EXPECTED OUTCOME
+
+The Flutter Mobile Application shall function as a secure guest self-service portal integrated with the existing Hotel Management System.
+
+Each guest shall possess a valid Supabase Authentication account linked to their guest profile through the `auth_id` field, ensuring secure authentication, proper access control, and protection of guest data while providing real-time access to hotel services throughout their stay.
