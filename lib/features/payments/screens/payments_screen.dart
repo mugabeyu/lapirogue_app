@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/services/supabase_service.dart';
+import '../../../core/services/guest_service.dart';
+import '../../../core/services/payment_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/payment.dart';
 import 'package:intl/intl.dart';
 
 /// Payments & Billing Screen (Read-only)
@@ -13,7 +15,7 @@ class PaymentsScreen extends StatefulWidget {
 }
 
 class _PaymentsScreenState extends State<PaymentsScreen> {
-  List<Map<String, dynamic>> _payments = [];
+  List<Payment> _payments = [];
   double _totalPaid = 0;
   double _totalOutstanding = 0;
   bool _isLoading = true;
@@ -25,33 +27,25 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   }
 
   Future<void> _loadPayments() async {
-    final guestId = await SupabaseService.getCurrentGuestId();
+    final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) {
       setState(() => _isLoading = false);
       return;
     }
 
     try {
-      final response = await SupabaseService.client
-          .from('payments')
-          .select('*, payment_extra_items(*)')
-          .eq('guest_id', guestId)
-          .order('created_at', ascending: false);
-
-      final payments = List<Map<String, dynamic>>.from(response);
+      final payments = await PaymentService().getPayments(guestId);
       double paid = 0;
       double outstanding = 0;
-
+      
       for (var payment in payments) {
-        final amount = (payment['amount'] ?? 0).toDouble();
-        final status = payment['status'] ?? 'PENDING';
-        if (status == 'COMPLETED' || status == 'PAID') {
-          paid += amount;
+        if (payment.status == 'COMPLETED' || payment.status == 'PAID') {
+          paid += payment.amount;
         } else {
-          outstanding += amount;
+          outstanding += payment.amount;
         }
       }
-
+      
       setState(() {
         _payments = payments;
         _totalPaid = paid;
@@ -168,13 +162,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     );
   }
 
-  Widget _buildPaymentCard(Map<String, dynamic> payment) {
-    final amount = (payment['amount'] ?? 0).toDouble();
-    final status = payment['status'] ?? 'PENDING';
-    final method = payment['method'] ?? 'CASH';
-    final createdAt = DateTime.parse(payment['created_at'] ?? DateTime.now().toIso8601String());
-    final paymentId = payment['payment_id'] ?? 'Unknown';
-    final extraItems = payment['payment_extra_items'] as List<dynamic>? ?? [];
+  Widget _buildPaymentCard(Payment payment) {
+    final amount = payment.amount;
+    final status = payment.status;
+    final method = payment.method;
+    final createdAt = payment.createdAt ?? DateTime.now();
+    final paymentId = payment.paymentId;
+    final extraItems = payment.extraItems;
 
     Color statusColor;
     switch (status.toUpperCase()) {

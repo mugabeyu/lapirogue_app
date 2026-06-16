@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../../core/services/guest_service.dart';
-import '../../../../../core/services/activity_service.dart';
-import '../../../../../core/services/message_service.dart';
-import '../../../../../core/services/schedule_service.dart';
-import '../../../../../core/theme/app_theme.dart';
+import '../../../core/services/guest_service.dart';
+import '../../../core/services/activity_service.dart';
+import '../../../core/services/message_service.dart';
+import '../../../core/services/schedule_service.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/models/message.dart';
+import '../../../core/models/guest_schedule_item.dart';
+import '../widgets/dashboard_card.dart';
+import '../widgets/quick_action_button.dart';
 import '../../schedule/screens/daily_schedule_screen.dart';
 import '../../messages/screens/messages_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../activities/screens/activities_screen.dart';
 import '../../food/screens/food_beverage_screen.dart';
 import '../../payments/screens/payments_screen.dart';
-import '../widgets/dashboard_card.dart';
-import '../widgets/quick_action_button.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -32,8 +34,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _checkOutDate = '';
   String _reservationStatus = 'CONFIRMED';
   int _ecoPoints = 0;
-  List<dynamic> _todaySchedule = [];
-  List<dynamic> _latestMessages = [];
+  List<GuestScheduleItem> _todaySchedule = [];
+  List<Message> _latestMessages = [];
 
   @override
   void initState() {
@@ -70,8 +72,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _unreadNotifications = results[0] as int;
         _unreadMessages = results[1] as int;
         _ecoPoints = results[2] as int;
-        _todaySchedule = results[3] as List<dynamic>;
-        _latestMessages = (results[4] as List<dynamic>)
+        _todaySchedule = (results[3] as List<GuestScheduleItem>).take(3).toList();
+        _latestMessages = (results[4] as List<Message>)
             .take(3)
             .toList();
         
@@ -485,11 +487,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> _buildSchedulePreview() {
-    final items = (_todaySchedule).take(3).toList();
+    final items = _todaySchedule.take(3).toList();
     return items.asMap().entries.map((entry) {
       final index = entry.key;
-      final item = entry.value as Map<String, dynamic>;
-      final startAt = DateTime.parse(item['start_at']);
+      final item = entry.value;
       final isLast = index == items.length - 1;
       
       return Padding(
@@ -507,7 +508,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                item['title'] ?? 'Untitled',
+                item.title,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -518,7 +519,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             Text(
-              DateFormat('HH:mm').format(startAt),
+              DateFormat('HH:mm').format(item.startAt),
               style: const TextStyle(
                 fontSize: 13,
                 color: AppTheme.textSecondary,
@@ -531,19 +532,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> _buildMessagesPreview() {
-    final messages = (_latestMessages).take(3).toList();
+    final messages = _latestMessages.take(3).toList();
     return messages.asMap().entries.map((entry) {
       final index = entry.key;
-      final msg = entry.value as Map<String, dynamic>;
+      final msg = entry.value;
       final isLast = index == messages.length - 1;
-      final isRead = msg['is_read'] ?? true;
       
       return Padding(
         padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isRead)
+            if (!msg.isRead)
               Container(
                 width: 8,
                 height: 8,
@@ -555,14 +555,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               )
             else
               const SizedBox(width: 8),
-            if (!isRead) const SizedBox(width: 8),
+            if (!msg.isRead) const SizedBox(width: 8),
             Expanded(
               child: Text(
-                msg['content'] ?? '',
+                msg.content,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isRead ? AppTheme.textSecondary : AppTheme.textPrimary,
-                  fontWeight: isRead ? FontWeight.normal : FontWeight.w600,
+                  color: msg.isRead ? AppTheme.textSecondary : AppTheme.textPrimary,
+                  fontWeight: msg.isRead ? FontWeight.normal : FontWeight.w600,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

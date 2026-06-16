@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/services/supabase_service.dart';
+import '../../../core/services/guest_service.dart';
 import '../../../core/services/message_service.dart';
+import '../../../core/models/message.dart';
 import '../../../core/theme/app_theme.dart';
 
 class MessagesScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class MessagesScreen extends StatefulWidget {
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
-  List<dynamic> _messages = [];
+  List<Message> _messages = [];
   bool _isLoading = true;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -32,7 +33,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Future<void> _loadMessages() async {
-    final guestId = await SupabaseService.getCurrentGuestId();
+    final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) {
       setState(() => _isLoading = false);
       return;
@@ -64,7 +65,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final message = _messageController.text.trim();
     if (message.isEmpty) return;
 
-    final guestId = await SupabaseService.getCurrentGuestId();
+    final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) return;
 
     try {
@@ -210,7 +211,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   Widget _buildMessageBubble({
-    required dynamic message,
+    required Message message,
     required bool isGuest,
     required bool showAvatar,
   }) {

@@ -55,7 +55,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirmed == true) {
-      await SupabaseService.signOut();
+      try {
+        await SupabaseService.signOut();
+      } catch (_) {}
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,

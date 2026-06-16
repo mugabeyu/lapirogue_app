@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/services/supabase_service.dart';
+import '../../../core/services/guest_service.dart';
 import '../../../core/services/activity_service.dart';
 import '../../../core/models/activity.dart';
 import '../../../core/models/activity_booking.dart';
@@ -44,7 +44,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   }
 
   Future<void> _loadMyBookings() async {
-    final guestId = await SupabaseService.getCurrentGuestId();
+    final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) return;
 
     final bookings = await ActivityService().getMyBookings(guestId);
@@ -54,7 +54,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
   }
 
   Future<void> _bookActivity(Activity activity) async {
-    final guestId = await SupabaseService.getCurrentGuestId();
+    final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) return;
 
     final confirmed = await showDialog<bool>(

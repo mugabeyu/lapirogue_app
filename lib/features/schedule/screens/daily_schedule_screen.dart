@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/services/supabase_service.dart';
+import '../../../core/services/guest_service.dart';
+import '../../../core/services/schedule_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/models/guest_schedule_item.dart';
 import 'package:intl/intl.dart';
 
 /// Daily Schedule Screen - Shows guest schedule items in day-by-day format
@@ -13,7 +15,7 @@ class DailyScheduleScreen extends StatefulWidget {
 }
 
 class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
-  List<Map<String, dynamic>> _scheduleItems = [];
+  List<GuestScheduleItem> _scheduleItems = [];
   bool _isLoading = true;
   DateTime _selectedDate = DateTime.now();
 
@@ -24,21 +26,16 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
   }
 
   Future<void> _loadSchedule() async {
-    final guestId = await SupabaseService.getCurrentGuestId();
-    if (guestId == null) {
+    final guest = await GuestService().getCurrentGuest();
+    if (guest == null) {
       setState(() => _isLoading = false);
       return;
     }
 
     try {
-      final response = await SupabaseService.client
-          .from('guest_schedule_items')
-          .select('*')
-          .eq('guest_id', guestId)
-          .order('start_at', ascending: true);
-
+      final items = await ScheduleService().getScheduleForGuest(guest.id);
       setState(() {
-        _scheduleItems = List<Map<String, dynamic>>.from(response);
+        _scheduleItems = items;
         _isLoading = false;
       });
     } catch (e) {
@@ -47,12 +44,11 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
     }
   }
 
-  List<Map<String, dynamic>> get _itemsForSelectedDate {
+  List<GuestScheduleItem> get _itemsForSelectedDate {
     return _scheduleItems.where((item) {
-      final startAt = DateTime.parse(item['start_at']);
-      return startAt.year == _selectedDate.year &&
-          startAt.month == _selectedDate.month &&
-          startAt.day == _selectedDate.day;
+      return item.startAt.year == _selectedDate.year &&
+          item.startAt.month == _selectedDate.month &&
+          item.startAt.day == _selectedDate.day;
     }).toList();
   }
 
@@ -160,13 +156,13 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
     );
   }
 
-  Widget _buildScheduleItem(Map<String, dynamic> item) {
-    final startAt = DateTime.parse(item['start_at']);
-    final endAt = DateTime.parse(item['end_at']);
-    final title = item['title'] ?? 'Untitled';
-    final description = item['description'] ?? '';
-    final location = item['location'] ?? '';
-    final status = item['status'] ?? 'SCHEDULED';
+  Widget _buildScheduleItem(GuestScheduleItem item) {
+    final startAt = item.startAt;
+    final endAt = item.endAt;
+    final title = item.title;
+    final description = item.description ?? '';
+    final location = item.location ?? '';
+    final status = item.status;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/services/supabase_service.dart';
+import '../../../core/services/guest_service.dart';
 import '../../../core/services/message_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/notification.dart' as model;
@@ -24,7 +24,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _loadNotifications() async {
-    final guestId = await SupabaseService.getCurrentGuestId();
+    final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) {
       setState(() => _isLoading = false);
       return;
@@ -65,7 +65,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _markAllAsRead() async {
-    final guestId = await SupabaseService.getCurrentGuestId();
+    final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) return;
 
     final success = await NotificationService().markAllAsRead(guestId);

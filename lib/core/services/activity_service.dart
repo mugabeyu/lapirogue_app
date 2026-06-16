@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/activity.dart';
 import '../models/activity_booking.dart';
 import '../models/eco_points_transaction.dart';
+import '../models/eco_action.dart';
 
 class ActivityService {
   static final ActivityService _instance = ActivityService._internal();
@@ -133,7 +134,7 @@ class EcoPointsService {
     }
   }
 
-  Future<bool> earnPoints({
+Future<bool> earnPoints({
     required String guestId,
     required int points,
     required String description,
@@ -146,6 +147,64 @@ class EcoPointsService {
         'description': description,
         'status': 'COMPLETED',
       });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<List<EcoAction>> getEcoActions({bool activeOnly = true}) async {
+    try {
+      var query = _client.from('eco_actions').select('*');
+      if (activeOnly) {
+        query = query.eq('is_active', true);
+      }
+      final response = await query.order('points', ascending: false);
+      return response.map((e) => EcoAction.fromJson(e)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<bool> participateInEcoAction({
+    required String guestId,
+    required String actionId,
+  }) async {
+    try {
+      // First get the action details
+      final actionResponse = await _client
+          .from('eco_actions')
+          .select('title, points, description')
+          .eq('id', actionId)
+          .maybeSingle();
+      
+      if (actionResponse == null) return false;
+      
+      final actionTitle = actionResponse['title'] ?? 'Eco Action';
+      final actionPoints = actionResponse['points'] ?? 0;
+      
+      // Insert transaction record
+      await _client.from('eco_points_tx').insert({
+        'guest_id': guestId,
+        'tx_type': 'EARN',
+        'points': actionPoints,
+        'description': 'Participated in: $actionTitle',
+        'status': 'COMPLETED',
+      });
+      
+      // Insert into guest_eco_actions tracking table
+      await _client.from('guest_eco_actions').insert({
+        'guest_id': guestId,
+        'eco_action_id': actionId,
+        'earned_points': actionPoints,
+      });
+      
+      // Update or create balance with tier calculation
+      await _client.rpc('increment_eco_points', params: {
+        'p_guest_id': guestId,
+        'p_points': actionPoints,
+      });
+      
       return true;
     } catch (e) {
       return false;

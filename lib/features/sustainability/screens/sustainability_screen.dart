@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/services/activity_service.dart';
+import '../../../core/services/guest_service.dart';
 import '../../../core/models/eco_points_transaction.dart';
+import '../../../core/models/eco_action.dart';
 import '../../../core/theme/app_theme.dart';
 import 'leaderboard_screen.dart';
 
@@ -17,7 +19,9 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
   int _points = 0;
   String _tier = 'Bronze';
   List<EcoPointsTransaction> _transactions = [];
+  List<EcoAction> _ecoActions = [];
   bool _isLoading = true;
+  bool _isParticipating = false;
 
   @override
   void initState() {
@@ -37,18 +41,50 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
         EcoPointsService().getEcoPointsBalance(guestId),
         EcoPointsService().getEcoPointsTier(guestId),
         EcoPointsService().getTransactions(guestId),
+        EcoPointsService().getEcoActions(activeOnly: true),
       ]);
 
       setState(() {
         _points = results[0] as int;
         _tier = results[1] as String;
         _transactions = results[2] as List<EcoPointsTransaction>;
+        _ecoActions = results[3] as List<EcoAction>;
         _isLoading = false;
       });
     } catch (e) {
       if (kDebugMode) debugPrint('Error loading eco data: $e');
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _participateInAction(EcoAction action) async {
+    final guest = await GuestService().getCurrentGuest();
+    if (guest == null) {
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to participate')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isParticipating = true);
+    final success = await EcoPointsService().participateInEcoAction(
+      guestId: guest.id,
+      actionId: action.id,
+    );
+    
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Earned ${action.points} eco points!')),
+      );
+      _loadData();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to participate')),
+      );
+    }
+    setState(() => _isParticipating = false);
   }
 
   Color _getTierColor(String tier) {
@@ -210,33 +246,28 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'How to Earn Points',
+                              'Available Eco Actions',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 16),
-                            _buildEarnOption(
-                              icon: Icons.replay,
-                              title: 'Reuse towels',
-                              points: 10,
-                            ),
-                            _buildEarnOption(
-                              icon: Icons.local_drink,
-                              title: 'Use refillable water bottle',
-                              points: 15,
-                            ),
-                            _buildEarnOption(
-                              icon: Icons.recycling,
-                              title: 'Participate in recycling',
-                              points: 20,
-                            ),
-                            _buildEarnOption(
-                              icon: Icons.electric_bolt,
-                              title: 'Turn off lights when leaving',
-                              points: 5,
-                            ),
+                            if (_ecoActions.isEmpty)
+                              const Text(
+                                'No eco actions available at the moment.',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondary,
+                                ),
+                              )
+                            else
+                              ..._ecoActions.map((action) => _buildEarnOption(
+                                icon: _getActionIcon(action.iconName),
+                                title: action.title,
+                                points: action.points,
+                                onTap: () => _participateInAction(action),
+                                isActionable: true,
+                              )),
                           ],
                         ),
                       ),
@@ -274,47 +305,95 @@ class _SustainabilityScreenState extends State<SustainabilityScreen> {
     required IconData icon,
     required String title,
     required int points,
+    VoidCallback? onTap,
+    bool isActionable = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.accentGreen.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: AppTheme.accentGreen, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isActionable && !_isParticipating ? onTap : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isActionable 
+                      ? AppTheme.accentGreen.withValues(alpha: 0.2)
+                      : AppTheme.accentGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: AppTheme.accentGreen, size: 20),
               ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppTheme.accentGreen.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '+$points',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.accentGreen,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
-            ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '+$points',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.accentGreen,
+                  ),
+                ),
+              ),
+              if (isActionable) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: AppTheme.textTertiary,
+                ),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  IconData _getActionIcon(String iconName) {
+    switch (iconName.toLowerCase()) {
+      case 'recycling':
+        return Icons.recycling;
+      case 'beach':
+      case 'beach_cleanup':
+        return Icons.beach_access;
+      case 'towel':
+        return Icons.replay;
+      case 'digital':
+      case 'invoice':
+        return Icons.receipt_long;
+      case 'bicycle':
+      case 'bike':
+        return Icons.directions_bike;
+      case 'workshop':
+        return Icons.model_training;
+      case 'tour':
+        return Icons.tour;
+      case 'cleaning':
+        return Icons.cleaning_services;
+      case 'water':
+      case 'water_station':
+        return Icons.local_drink;
+      default:
+        return Icons.eco;
+    }
   }
 
   Widget _buildTransactionCard(EcoPointsTransaction tx) {
