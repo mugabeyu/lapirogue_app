@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/activity.dart';
-import '../models/activity_booking.dart';
 import '../models/eco_points_transaction.dart';
 import '../models/eco_action.dart';
 
@@ -20,59 +20,54 @@ class ActivityService {
           .order('name');
       return response.map((e) => Activity.fromJson(e)).toList();
     } catch (e) {
+      if (kDebugMode) debugPrint('getAvailableActivities error: $e');
       return [];
     }
   }
 
-  Future<List<ActivityBooking>> getMyBookings(String guestId) async {
-    try {
-      final response = await _client
-          .from('activity_bookings')
-          .select('*, activities(*)')
-          .eq('guest_id', guestId)
-          .order('booking_date', ascending: false);
-      return response.map((e) => ActivityBooking.fromJson(e)).toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<bool> bookActivity({
-    required String activityId,
+  Future<bool> markActivityCompleted({
+    required String bookingId,
     required String guestId,
-    required DateTime bookingDate,
-    String? bookingTime,
-    int participants = 1,
-    String? pickupPoint,
-    String? notes,
   }) async {
     try {
-      await _client.from('activity_bookings').insert({
-        'activity_id': activityId,
+      final booking = await _client
+          .from('activity_bookings')
+          .select('*, activities(name, price)')
+          .eq('id', bookingId)
+          .maybeSingle();
+
+      if (booking == null) return false;
+
+      final activityName = booking['activities']?['name'] ?? 'Activity';
+      final activityPrice = (booking['activities']?['price'] ?? 0).toDouble();
+
+      await _client
+          .from('activity_bookings')
+          .update({'status': 'COMPLETED'})
+          .eq('id', bookingId);
+
+      final ecoPoints = (activityPrice / 100).ceil() * 5;
+      final pointsToAward = ecoPoints > 0 ? ecoPoints : 25;
+
+      await _client.from('eco_points_tx').insert({
         'guest_id': guestId,
-        'booking_date': bookingDate.toIso8601String().split('T').first,
-        'booking_time': bookingTime,
-        'participants': participants,
-        'pickup_point': pickupPoint,
-        'notes': notes,
+        'tx_type': 'EARN',
+        'points': pointsToAward,
+        'description': 'Completed activity: $activityName',
+        'status': 'COMPLETED',
       });
+      await _client.rpc('increment_eco_points', params: {
+        'p_guest_id': guestId,
+        'p_points': pointsToAward,
+      });
+
       return true;
     } catch (e) {
+      if (kDebugMode) debugPrint('markActivityCompleted error: $e');
       return false;
     }
   }
 
-  Future<bool> cancelBooking(String bookingId) async {
-    try {
-      await _client
-          .from('activity_bookings')
-          .update({'status': 'CANCELLED'})
-          .eq('id', bookingId);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 }
 
 class EcoPointsService {
@@ -134,7 +129,7 @@ class EcoPointsService {
     }
   }
 
-Future<bool> earnPoints({
+  Future<bool> earnPoints({
     required String guestId,
     required int points,
     required String description,
@@ -146,6 +141,10 @@ Future<bool> earnPoints({
         'points': points,
         'description': description,
         'status': 'COMPLETED',
+      });
+      await _client.rpc('increment_eco_points', params: {
+        'p_guest_id': guestId,
+        'p_points': points,
       });
       return true;
     } catch (e) {
@@ -171,19 +170,17 @@ Future<bool> earnPoints({
     required String actionId,
   }) async {
     try {
-      // First get the action details
       final actionResponse = await _client
           .from('eco_actions')
           .select('title, points, description')
           .eq('id', actionId)
           .maybeSingle();
-      
+
       if (actionResponse == null) return false;
-      
+
       final actionTitle = actionResponse['title'] ?? 'Eco Action';
       final actionPoints = actionResponse['points'] ?? 0;
-      
-      // Insert transaction record
+
       await _client.from('eco_points_tx').insert({
         'guest_id': guestId,
         'tx_type': 'EARN',
@@ -191,20 +188,18 @@ Future<bool> earnPoints({
         'description': 'Participated in: $actionTitle',
         'status': 'COMPLETED',
       });
-      
-      // Insert into guest_eco_actions tracking table
+
       await _client.from('guest_eco_actions').insert({
         'guest_id': guestId,
         'eco_action_id': actionId,
         'earned_points': actionPoints,
       });
-      
-      // Update or create balance with tier calculation
+
       await _client.rpc('increment_eco_points', params: {
         'p_guest_id': guestId,
         'p_points': actionPoints,
       });
-      
+
       return true;
     } catch (e) {
       return false;

@@ -11,6 +11,7 @@ class FoodOrder {
   final String status;
   final String? notes;
   final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   FoodOrder({
     required this.id,
@@ -25,6 +26,7 @@ class FoodOrder {
     required this.status,
     this.notes,
     this.createdAt,
+    this.updatedAt,
   });
 
   factory FoodOrder.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,7 @@ class FoodOrder {
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at']) 
           : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
     );
   }
 

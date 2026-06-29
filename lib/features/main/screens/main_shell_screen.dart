@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../dashboard/screens/dashboard_screen.dart';
 import '../../explore/screens/explore_screen.dart';
 import '../../messages/screens/messages_screen.dart';
-import '../../profile/screens/profile_screen.dart';
+import '../../settings/screens/settings_screen.dart';
 
 class MainShellScreen extends StatefulWidget {
   const MainShellScreen({super.key});
@@ -14,16 +13,13 @@ class MainShellScreen extends StatefulWidget {
 
 class _MainShellScreenState extends State<MainShellScreen> {
   int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    ExploreScreen(),
-    MessagesScreen(),
-    ProfileScreen(),
-  ];
+  int _homeRefreshKey = 0;
 
   void _onTabTapped(int index) {
-    setState(() => _currentIndex = index);
+    setState(() {
+      if (index == 0) _homeRefreshKey++;
+      _currentIndex = index;
+    });
   }
 
   @override
@@ -31,7 +27,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          ExploreScreen(key: ValueKey(_homeRefreshKey)),
+          const MessagesScreen(),
+          const SettingsScreen(),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -70,19 +70,14 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   label: 'Home',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.compass_calibration_outlined),
-                  activeIcon: Icon(Icons.compass_calibration),
-                  label: 'Explore',
-                ),
-                BottomNavigationBarItem(
                   icon: Icon(Icons.chat_outlined),
                   activeIcon: Icon(Icons.chat),
                   label: 'Messages',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline_rounded),
-                  activeIcon: Icon(Icons.person_rounded),
-                  label: 'Profile',
+                  icon: Icon(Icons.person_outline),
+                  activeIcon: Icon(Icons.person),
+                  label: 'My Stay',
                 ),
               ],
             ),

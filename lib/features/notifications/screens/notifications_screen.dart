@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/guest_service.dart';
-import '../../../core/services/message_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/models/notification.dart' as model;
+import '../../../core/models/notification.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -14,7 +14,7 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<model.Notification> _notifications = [];
+  List<AppNotification> _notifications = [];
   bool _isLoading = true;
 
   @override
@@ -42,7 +42,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _markAsRead(model.Notification notification) async {
+  Future<void> _markAsRead(AppNotification notification) async {
     if (notification.isRead) return;
 
     final success = await NotificationService().markAsRead(notification.id);
@@ -50,7 +50,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       setState(() {
         final index = _notifications.indexWhere((n) => n.id == notification.id);
         if (index != -1) {
-          _notifications[index] = model.Notification(
+          _notifications[index] = AppNotification(
             id: notification.id,
             guestId: notification.guestId,
             title: notification.title,
@@ -72,7 +72,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (success) {
       setState(() {
         for (var i = 0; i < _notifications.length; i++) {
-          _notifications[i] = model.Notification(
+          _notifications[i] = AppNotification(
             id: _notifications[i].id,
             guestId: _notifications[i].guestId,
             title: _notifications[i].title,
@@ -169,7 +169,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationCard(model.Notification notification) {
+  Widget _buildNotificationCard(AppNotification notification) {
     final isRead = notification.isRead;
     final category = notification.category;
     final createdAt = notification.createdAt ?? DateTime.now();

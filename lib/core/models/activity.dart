@@ -10,6 +10,8 @@ class Activity {
   final String? imagePath;
   final String? meetingPoint;
   final String? defaultTime;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Activity({
     required this.id,
@@ -23,6 +25,8 @@ class Activity {
     this.imagePath,
     this.meetingPoint,
     this.defaultTime,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Activity.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,8 @@ class Activity {
       imagePath: json['image_path'],
       meetingPoint: json['meeting_point'],
       defaultTime: json['default_time'],
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
     );
   }
 

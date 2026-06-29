@@ -10,6 +10,8 @@ class Room {
   final List<String> amenities;
   final String? imagePath;
   final List<String> imagePaths;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Room({
     required this.id,
@@ -23,6 +25,8 @@ class Room {
     required this.amenities,
     this.imagePath,
     required this.imagePaths,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Room.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,8 @@ class Room {
       amenities: (json['amenities'] as List<dynamic>?)?.cast<String>() ?? [],
       imagePath: json['image_path'],
       imagePaths: (json['image_paths'] as List<dynamic>?)?.cast<String>() ?? [],
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
     );
   }
 

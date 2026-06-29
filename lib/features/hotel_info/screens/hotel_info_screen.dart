@@ -32,7 +32,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
   Future<void> _loadData() async {
     try {
       final results = await Future.wait([
-        ContentService().getPage('hotel-info'),
+        ContentService().getPage('about'),
         _loadRooms(),
         ContentService().getServiceCategories(),
         ContentService().getHotelServices(),
@@ -152,59 +152,147 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Text(
-                info.title,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
-              ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (info.imagePath != null && info.imagePath!.isNotEmpty)
+            Image.network(
+              info.imagePath!,
+              height: 200,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
             ),
-            if (info.subtitle != null && info.subtitle!.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Center(
-                child: Text(
-                  info.subtitle!,
-                  style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
-                ),
-              ),
-            ],
-            if (info.body != null && info.body!.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text(
-                info.body!,
-                style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.6),
-              ),
-            ],
-            if (info.highlights.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: info.highlights.map<Widget>((h) {
-                  final highlight = h is Map<String, dynamic> ? h : {};
-                  return Chip(
-                    avatar: Icon(
-                      _iconFromName(highlight['icon']),
-                      size: 16,
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Text(
+                    info.title,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
                     ),
-                    label: Text(highlight['label'] ?? ''),
-                    backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
-                    side: BorderSide.none,
-                  );
-                }).toList(),
-              ),
-            ],
-          ],
-        ),
+                  ),
+                ),
+                if (info.subtitle != null && info.subtitle!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
+                      info.subtitle!,
+                      style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
+                    ),
+                  ),
+                ],
+                if (info.body != null && info.body!.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    info.body!,
+                    style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.6),
+                  ),
+                ],
+                if (info.highlights.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: info.highlights.map<Widget>((h) {
+                      if (h is Map<String, dynamic>) {
+                        return Chip(
+                          avatar: Icon(
+                            _iconFromName(h['icon']),
+                            size: 16,
+                            color: AppTheme.primary,
+                          ),
+                          label: Text(h['label'] ?? ''),
+                          backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
+                          side: BorderSide.none,
+                        );
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.check_circle, size: 16, color: AppTheme.accentGreen),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                h.toString(),
+                                style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+                if (info.metrics.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 12,
+                    children: info.metrics.map<Widget>((m) {
+                      if (m is Map<String, dynamic>) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                m['label']?.toString() ?? '',
+                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                m['value']?.toString() ?? '',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      final parts = m.toString().split('|');
+                      if (parts.length == 2) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                parts[0].trim(),
+                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                parts[1].trim(),
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return Text(m.toString(), style: const TextStyle(fontSize: 14));
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -227,64 +315,92 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
   }
 
   Widget _buildRoomCard(Room room) {
+    final imageUrl = room.imagePaths.isNotEmpty
+        ? room.imagePaths.first
+        : room.imagePath;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ExpansionTile(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.hotel, color: AppTheme.primary),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Room ${room.roomNumber}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Text(
-                    '${room.type} - Rs ${room.price.toStringAsFixed(0)}/night',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (imageUrl != null && imageUrl.isNotEmpty)
+            Image.network(
+              imageUrl,
+              height: 160,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                height: 100,
+                color: AppTheme.primary.withValues(alpha: 0.1),
+                child: const Icon(Icons.hotel, size: 48, color: AppTheme.primary),
+              ),
+            )
+          else
+            Container(
+              height: 100,
+              color: AppTheme.primary.withValues(alpha: 0.1),
+              child: const Icon(Icons.hotel, size: 48, color: AppTheme.primary),
+            ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Divider(),
-                if (room.description != null && room.description!.isNotEmpty)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Room ${room.roomNumber} - ${room.type}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Text(
+                      'Rs ${room.price.toStringAsFixed(0)}/night',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                if (room.description != null && room.description!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
                   Text(
                     room.description!,
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                    style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                if (room.amenities.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text('Amenities:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                ],
+                if (room.capacity > 0) ...[
                   const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.people, size: 16, color: AppTheme.textSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Up to ${room.capacity} guests',
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                ],
+                if (room.amenities.isNotEmpty) ...[
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: room.amenities.map((amenity) {
                       return Chip(
-                        avatar: Icon(_iconFromName(amenity), size: 16, color: AppTheme.primary),
-                        label: Text(amenity),
+                        avatar: Icon(_iconFromName(amenity), size: 14, color: AppTheme.primary),
+                        label: Text(amenity, style: const TextStyle(fontSize: 12)),
                         backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
                         side: BorderSide.none,
+                        visualDensity: VisualDensity.compact,
                       );
                     }).toList(),
                   ),

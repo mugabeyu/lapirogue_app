@@ -9,6 +9,7 @@ class Payment {
   final String? reference;
   final String? notes;
   final DateTime? createdAt;
+  final DateTime? updatedAt;
   final List<dynamic> extraItems;
 
   Payment({
@@ -22,6 +23,7 @@ class Payment {
     this.reference,
     this.notes,
     this.createdAt,
+    this.updatedAt,
     required this.extraItems,
   });
 
@@ -39,6 +41,7 @@ class Payment {
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at']) 
           : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
       extraItems: json['payment_extra_items'] ?? [],
     );
   }

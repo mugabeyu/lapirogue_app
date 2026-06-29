@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../core/services/guest_service.dart';
 import '../../../core/services/payment_service.dart';
+import '../../../core/services/billing_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/payment.dart';
-import 'package:intl/intl.dart';
 
-/// Payments & Billing Screen (Read-only)
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
 
@@ -16,17 +16,16 @@ class PaymentsScreen extends StatefulWidget {
 
 class _PaymentsScreenState extends State<PaymentsScreen> {
   List<Payment> _payments = [];
-  double _totalPaid = 0;
-  double _totalOutstanding = 0;
+  BillingSummary? _billing;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadPayments();
+    _loadData();
   }
 
-  Future<void> _loadPayments() async {
+  Future<void> _loadData() async {
     final guestId = await GuestService().getCurrentGuestId();
     if (guestId == null) {
       setState(() => _isLoading = false);
@@ -34,26 +33,18 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     }
 
     try {
-      final payments = await PaymentService().getPayments(guestId);
-      double paid = 0;
-      double outstanding = 0;
-      
-      for (var payment in payments) {
-        if (payment.status == 'COMPLETED' || payment.status == 'PAID') {
-          paid += payment.amount;
-        } else {
-          outstanding += payment.amount;
-        }
-      }
+      final results = await Future.wait([
+        PaymentService().getPayments(guestId),
+        BillingService().getBillingSummary(guestId),
+      ]);
       
       setState(() {
-        _payments = payments;
-        _totalPaid = paid;
-        _totalOutstanding = outstanding;
+        _payments = results[0] as List<Payment>;
+        _billing = results[1] as BillingSummary;
         _isLoading = false;
       });
     } catch (e) {
-      if (kDebugMode) debugPrint('Error loading payments: $e');
+      if (kDebugMode) debugPrint('Error loading billing data: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -65,35 +56,17 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: _loadPayments,
+              onRefresh: _loadData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Summary Cards
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSummaryCard(
-                            'Total Paid',
-                            'Rs ${_totalPaid.toStringAsFixed(2)}',
-                            AppTheme.accentGreen,
-                            Icons.check_circle,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildSummaryCard(
-                            'Outstanding',
-                            'Rs ${_totalOutstanding.toStringAsFixed(2)}',
-                            _totalOutstanding > 0 ? AppTheme.accentOrange : AppTheme.accentGreen,
-                            _totalOutstanding > 0 ? Icons.pending : Icons.check_circle,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                    // Billing Summary
+                    if (_billing != null) ...[
+                      _buildBillingSummary(),
+                      const SizedBox(height: 24),
+                    ],
                     
                     // Payments List
                     if (_payments.isEmpty)
@@ -125,6 +98,91 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildBillingSummary() {
+    if (_billing == null) return const SizedBox.shrink();
+    final b = _billing!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                'Total Charges',
+                'Rs ${b.totalCharges.toStringAsFixed(2)}',
+                AppTheme.primary,
+                Icons.receipt,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                'Total Paid',
+                'Rs ${b.totalPaid.toStringAsFixed(2)}',
+                AppTheme.accentGreen,
+                Icons.check_circle,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                'Balance Due',
+                'Rs ${b.balanceDue.toStringAsFixed(2)}',
+                b.balanceDue > 0 ? AppTheme.accentOrange : AppTheme.accentGreen,
+                b.balanceDue > 0 ? Icons.pending : Icons.check_circle,
+              ),
+            ),
+          ],
+        ),
+        if (b.totals.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text('Breakdown', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...b.totals.entries
+            .where((e) => e.value > 0)
+            .map((e) => _buildBreakdownRow(e.key, e.value)),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(),
+          ),
+          _buildBreakdownRow('Total', b.totalCharges, isTotal: true),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildBreakdownRow(String label, double amount, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 15 : 13,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w400,
+              color: isTotal ? AppTheme.textPrimary : AppTheme.textSecondary,
+            ),
+          ),
+          Text(
+            'Rs ${amount.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: isTotal ? 15 : 13,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              color: isTotal ? AppTheme.primary : AppTheme.textPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/services/push_notification_service.dart';
 import 'features/auth/screens/session_controller.dart';
 
 void main() async {
@@ -32,6 +33,9 @@ void main() async {
   } catch (e) {
     debugPrint('Supabase initialization failed: $e');
   }
+
+  await PushNotificationService().initialize();
+  await PushNotificationService().requestPermissions();
 
   runApp(const LapirogueHotelApp());
 }

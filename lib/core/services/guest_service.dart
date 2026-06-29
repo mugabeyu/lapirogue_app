@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/guest.dart';
 
@@ -11,17 +12,38 @@ class GuestService {
   Future<Guest?> getCurrentGuest() async {
     final user = _client.auth.currentUser;
     if (user == null) return null;
-    
+
     try {
-      final response = await _client
+      final byAuthId = await _client
           .from('guests')
           .select('*, reservations(*, rooms(*))')
           .eq('auth_id', user.id)
           .maybeSingle();
-      
-      if (response == null) return null;
-      return Guest.fromJson(response);
+
+      if (byAuthId != null) return Guest.fromJson(byAuthId);
+
+      if (user.email == null) return null;
+
+      final byEmail = await _client
+          .from('guests')
+          .select('*, reservations(*, rooms(*))')
+          .eq('email', user.email!)
+          .maybeSingle();
+
+      if (byEmail == null) return null;
+
+      try {
+        await _client
+            .from('guests')
+            .update({'auth_id': user.id, 'auth_user_id': user.id})
+            .eq('id', byEmail['id']);
+      } catch (updateError) {
+        if (kDebugMode) debugPrint('Auth link update error: $updateError');
+      }
+
+      return Guest.fromJson(byEmail);
     } catch (e) {
+      if (kDebugMode) debugPrint('getCurrentGuest error: $e');
       return null;
     }
   }

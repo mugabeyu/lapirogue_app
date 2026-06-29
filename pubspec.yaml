@@ -93,6 +93,9 @@ dependencies:
   path_provider: ^2.1.1
   path: ^1.8.3
 
+  # Google Fonts - DM Sans
+  google_fonts: ^6.1.0
+
   # Cupertino icons
   cupertino_icons: ^1.0.8
 
@@ -127,6 +130,7 @@ flutter:
   assets:
     - assets/config/settings.json
     - assets/images/home.jpeg
+    - assets/images/lapirogue_logo.jpg
     - .env
 
   #   - images/a_dot_ham.jpeg

@@ -27,7 +27,7 @@ class SessionService {
       final response = await _supabase
           .from('guests')
           .select('*, reservations(*, rooms(*))')
-          .eq('auth_id', user.id)
+          .eq('auth_user_id', user.id)
           .maybeSingle();
 
       return response;

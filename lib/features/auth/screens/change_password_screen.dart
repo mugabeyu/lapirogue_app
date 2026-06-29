@@ -196,30 +196,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentRed.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: AppTheme.accentRed,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: AppTheme.accentRed,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
+              Text(
+                _errorMessage!,
+                style: const TextStyle(
+                  color: AppTheme.accentRed,
+                  fontSize: 14,
                 ),
               ),
             ],

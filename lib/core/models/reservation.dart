@@ -12,6 +12,8 @@ class Reservation {
   final String status;
   final double totalAmount;
   final String? notes;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final Room? room;
 
   Reservation({
@@ -26,6 +28,8 @@ class Reservation {
     required this.status,
     required this.totalAmount,
     this.notes,
+    this.createdAt,
+    this.updatedAt,
     this.room,
   });
 
@@ -46,6 +50,8 @@ class Reservation {
       status: json['status'] ?? 'CONFIRMED',
       totalAmount: (json['total_amount'] ?? 0).toDouble(),
       notes: json['notes'],
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
       room: json['rooms'] != null ? Room.fromJson(json['rooms']) : null,
     );
   }

@@ -1,4 +1,4 @@
-class Notification {
+class AppNotification {
   final String id;
   final String? guestId;
   final String title;
@@ -7,7 +7,7 @@ class Notification {
   final bool isRead;
   final DateTime? createdAt;
 
-  Notification({
+  AppNotification({
     required this.id,
     this.guestId,
     required this.title,
@@ -17,8 +17,8 @@ class Notification {
     this.createdAt,
   });
 
-  factory Notification.fromJson(Map<String, dynamic> json) {
-    return Notification(
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
       id: json['id'] ?? '',
       guestId: json['guest_id'],
       title: json['title'] ?? '',

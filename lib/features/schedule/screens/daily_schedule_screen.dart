@@ -1,12 +1,16 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/guest_service.dart';
 import '../../../core/services/schedule_service.dart';
+import '../../../core/services/activity_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/guest_schedule_item.dart';
 import 'package:intl/intl.dart';
 
 /// Daily Schedule Screen - Shows guest schedule items in day-by-day format
+/// with "Mark as Completed" button to earn eco-points.
 class DailyScheduleScreen extends StatefulWidget {
   const DailyScheduleScreen({super.key});
 
@@ -33,6 +37,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
     }
 
     try {
+      await ScheduleService().autoCompleteOverdueItems(guest.id);
       final items = await ScheduleService().getScheduleForGuest(guest.id);
       setState(() {
         _scheduleItems = items;
@@ -52,6 +57,142 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
     }).toList();
   }
 
+  Future<void> _markCompleted(GuestScheduleItem item) async {
+    final guest = await GuestService().getCurrentGuest();
+    if (guest == null) return;
+
+    if (item.status.toUpperCase() == 'COMPLETED') {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This activity is already completed')),
+        );
+      }
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark as Completed'),
+        content: Text('Have you completed "${item.title}"? You will earn eco-points!'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Yes, Complete!'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final scheduleSuccess = await ScheduleService().markItemCompleted(item.id, sourceModule: item.sourceModule);
+    if (!scheduleSuccess) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item already completed or failed to update')),
+        );
+      }
+      return;
+    }
+
+    final pointsSuccess = await EcoPointsService().earnPoints(
+      guestId: guest.id,
+      points: 25,
+      description: 'Completed scheduled activity: ${item.title}',
+    );
+
+    if (mounted) {
+      if (pointsSuccess) {
+        setState(() {
+          for (int i = 0; i < _scheduleItems.length; i++) {
+            if (_scheduleItems[i].id == item.id) {
+              _scheduleItems[i] = GuestScheduleItem(
+                id: item.id,
+                guestId: item.guestId,
+                title: item.title,
+                itemType: item.itemType,
+                startAt: item.startAt,
+                endAt: item.endAt,
+                location: item.location,
+                description: item.description,
+                status: 'COMPLETED',
+                color: item.color,
+                sourceModule: item.sourceModule,
+                notes: item.notes,
+              );
+            }
+          }
+        });
+        _showEcoPointsAnimation();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Activity marked but failed to award eco-points')),
+        );
+      }
+    }
+  }
+
+  void _showEcoPointsAnimation() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.elasticOut,
+          builder: (context, value, child) {
+            return Transform.scale(
+              scale: value,
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentGreen,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.accentGreen.withValues(alpha: 0.4),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.eco, size: 64, color: Colors.white),
+                    SizedBox(height: 16),
+                    Text(
+                      '+25 Eco-Points!',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Keep up the great work!',
+                      style: TextStyle(fontSize: 16, color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,7 +209,6 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Date selector
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -118,8 +258,6 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                     ],
                   ),
                 ),
-                
-                // Schedule items
                 Expanded(
                   child: _itemsForSelectedDate.isEmpty
                       ? Center(
@@ -163,6 +301,7 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
     final description = item.description ?? '';
     final location = item.location ?? '';
     final status = item.status;
+    final isCompleted = status.toUpperCase() == 'COMPLETED';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -173,12 +312,13 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
       child: IntrinsicHeight(
         child: Row(
           children: [
-            // Time column
             Container(
               width: 70,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.1),
+                color: isCompleted
+                    ? AppTheme.accentGreen.withValues(alpha: 0.1)
+                    : AppTheme.primary.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   bottomLeft: Radius.circular(12),
@@ -189,10 +329,10 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                 children: [
                   Text(
                     DateFormat('HH:mm').format(startAt),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: isCompleted ? AppTheme.accentGreen : AppTheme.primary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -206,8 +346,6 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                 ],
               ),
             ),
-            
-            // Content
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -219,10 +357,11 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                         Expanded(
                           child: Text(
                             title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
+                              color: isCompleted ? AppTheme.textSecondary : AppTheme.textPrimary,
+                              decoration: isCompleted ? TextDecoration.lineThrough : null,
                             ),
                           ),
                         ),
@@ -259,6 +398,49 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
                             ),
                           ),
                         ],
+                      ),
+                    ],
+                    if (isCompleted) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 16, color: AppTheme.accentGreen),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Marked as Completed',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.accentGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (DateTime.now().isAfter(endAt.add(const Duration(minutes: 5))) && item.sourceModule != 'reservations') ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _markCompleted(item),
+                          icon: const Icon(Icons.check_circle, size: 18),
+                          label: const Text('Mark as Completed'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accentGreen,
+                          ),
+                        ),
+                      ),
+                    ] else if (DateTime.now().isAfter(endAt) && item.sourceModule != 'reservations') ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _markCompleted(item),
+                          icon: const Icon(Icons.check_circle, size: 18),
+                          label: const Text('Mark as Completed'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accentGreen,
+                          ),
+                        ),
                       ),
                     ],
                   ],

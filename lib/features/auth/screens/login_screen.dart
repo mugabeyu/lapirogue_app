@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../main/screens/main_shell_screen.dart';
 import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -50,14 +49,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response.user != null) {
-        setState(() => _isLoading = false);
-
-        if (!mounted) return;
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const MainShellScreen()),
-        );
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+        return;
       }
     } catch (e) {
       if (!mounted) return;
@@ -78,23 +73,19 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/home.jpeg',
-              fit: BoxFit.cover,
-            ),
+      resizeToAvoidBottomInset: false,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/home.jpeg'),
+            fit: BoxFit.cover,
           ),
-          // Dark Overlay
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.4),
-            ),
-          ),
-          // Content
-          SafeArea(
+        ),
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.4),
+          child: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -198,30 +189,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Error Message
                         if (_errorMessage != null) ...[
                           const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentRed.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.error_outline,
-                                  color: AppTheme.accentRed,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _errorMessage!,
-                                    style: const TextStyle(
-                                      color: AppTheme.accentRed,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: AppTheme.accentRed,
+                              fontSize: 14,
                             ),
                           ),
                         ],
@@ -268,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

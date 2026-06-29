@@ -7,14 +7,11 @@ import '../../../core/services/schedule_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/message.dart';
 import '../../../core/models/guest_schedule_item.dart';
+import '../../../core/models/guest.dart';
 import '../widgets/dashboard_card.dart';
-import '../widgets/quick_action_button.dart';
 import '../../schedule/screens/daily_schedule_screen.dart';
 import '../../messages/screens/messages_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
-import '../../activities/screens/activities_screen.dart';
-import '../../food/screens/food_beverage_screen.dart';
-import '../../payments/screens/payments_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -27,7 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _unreadNotifications = 0;
   int _unreadMessages = 0;
   bool _isLoading = true;
-  String _guestName = 'Guest';
+  String _guestName = '';
   String _roomNumber = '--';
   String _roomType = '';
   String _checkInDate = '';
@@ -37,6 +34,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<GuestScheduleItem> _todaySchedule = [];
   List<Message> _latestMessages = [];
 
+  Guest? _guest;
+
   @override
   void initState() {
     super.initState();
@@ -44,52 +43,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
-    try {
-      final guest = await GuestService().getCurrentGuest();
-      if (guest == null) {
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final guestId = guest.id;
-      
-      // Load all data in parallel
-      final results = await Future.wait([
-        GuestService().getUnreadNotificationsCount(guestId),
-        GuestService().getUnreadMessagesCount(guestId),
-        EcoPointsService().getEcoPointsBalance(guestId),
-        ScheduleService().getTodaysSchedule(guestId),
-        MessageService().getMessages(guestId),
-      ]);
-
-      // Get reservation data
-      final reservation = guest.reservations?.isNotEmpty == true 
-          ? guest.reservations![0] 
-          : null;
-
-      setState(() {
-        _guestName = guest.fullName.isNotEmpty ? guest.fullName : 'Guest';
-        _unreadNotifications = results[0] as int;
-        _unreadMessages = results[1] as int;
-        _ecoPoints = results[2] as int;
-        _todaySchedule = (results[3] as List<GuestScheduleItem>).take(3).toList();
-        _latestMessages = (results[4] as List<Message>)
-            .take(3)
-            .toList();
-        
-        if (reservation != null) {
-          _roomNumber = reservation.room?.roomNumber ?? '--';
-          _roomType = reservation.room?.type ?? '';
-          _checkInDate = reservation.checkIn.toIso8601String().split('T').first;
-          _checkOutDate = reservation.checkOut.toIso8601String().split('T').first;
-          _reservationStatus = reservation.status;
-        }
-        
-        _isLoading = false;
-      });
-    } catch (e) {
+    _guest = await GuestService().getCurrentGuest();
+    if (_guest == null) {
       setState(() => _isLoading = false);
+      return;
     }
+
+    final guestId = _guest!.id;
+    
+    final results = await Future.wait([
+      GuestService().getUnreadNotificationsCount(guestId),
+      GuestService().getUnreadMessagesCount(guestId),
+      EcoPointsService().getEcoPointsBalance(guestId),
+      ScheduleService().getTodaysSchedule(guestId),
+      MessageService().getMessages(guestId),
+    ]);
+
+    final reservation = _guest!.reservations?.isNotEmpty == true ? _guest!.reservations![0] : null;
+
+    setState(() {
+      _guestName = _guest!.fullName.isNotEmpty ? _guest!.fullName : '';
+      _unreadNotifications = results[0] as int;
+      _unreadMessages = results[1] as int;
+      _ecoPoints = results[2] as int;
+      _todaySchedule = (results[3] as List<GuestScheduleItem>).take(3).toList();
+      _latestMessages = (results[4] as List<Message>).take(3).toList();
+      
+      if (reservation != null) {
+        _roomNumber = reservation.room?.roomNumber ?? '--';
+        _roomType = reservation.room?.type ?? '';
+        _checkInDate = reservation.checkIn.toIso8601String().split('T').first;
+        _checkOutDate = reservation.checkOut.toIso8601String().split('T').first;
+        _reservationStatus = reservation.status;
+      }
+      
+      _isLoading = false;
+    });
   }
 
   void _navigateTo(Widget screen) {
@@ -122,7 +111,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: CustomScrollView(
                 slivers: [
                   SliverAppBar(
-                    expandedHeight: 180,
+                    expandedHeight: 120,
                     pinned: true,
                     flexibleSpace: FlexibleSpaceBar(
                       background: Container(
@@ -150,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
                           Text(
-                            _guestName,
+                            _guestName.isNotEmpty ? _guestName : 'Guest',
                             style: const TextStyle(
                               fontSize: 20,
                               color: Colors.white,
@@ -177,10 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   color: AppTheme.accentRed,
                                   shape: BoxShape.circle,
                                 ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
+                                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                                 child: Text(
                                   _unreadNotifications.toString(),
                                   style: const TextStyle(
@@ -210,10 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   color: AppTheme.accentRed,
                                   shape: BoxShape.circle,
                                 ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
+                                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                                 child: Text(
                                   _unreadMessages.toString(),
                                   style: const TextStyle(
@@ -301,9 +284,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Expanded(
                                   child: _buildDateInfo(
                                     'Check-in',
-                                    _checkInDate.isNotEmpty 
-                                        ? _formatDate(_checkInDate) 
-                                        : '--',
+                                    _checkInDate.isNotEmpty ? _formatDate(_checkInDate) : '--',
                                     Icons.login,
                                   ),
                                 ),
@@ -315,9 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Expanded(
                                   child: _buildDateInfo(
                                     'Check-out',
-                                    _checkOutDate.isNotEmpty 
-                                        ? _formatDate(_checkOutDate) 
-                                        : '--',
+                                    _checkOutDate.isNotEmpty ? _formatDate(_checkOutDate) : '--',
                                     Icons.logout,
                                   ),
                                 ),
@@ -329,65 +308,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Quick Actions',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: QuickActionButton(
-                                  icon: Icons.calendar_today,
-                                  label: 'Schedule',
-                                  color: AppTheme.primary,
-                                  onTap: () => _navigateTo(const DailyScheduleScreen()),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: QuickActionButton(
-                                  icon: Icons.explore,
-                                  label: 'Activities',
-                                  color: AppTheme.secondary,
-                                  onTap: () => _navigateTo(const ActivitiesScreen()),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: QuickActionButton(
-                                  icon: Icons.restaurant,
-                                  label: 'Dining',
-                                  color: AppTheme.accentOrange,
-                                  onTap: () => _navigateTo(const FoodBeverageScreen()),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: QuickActionButton(
-                                  icon: Icons.receipt_long,
-                                  label: 'Bills',
-                                  color: AppTheme.accentGreen,
-                                  onTap: () => _navigateTo(const PaymentsScreen()),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
                   if (_todaySchedule.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
@@ -395,11 +315,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: DashboardCard(
                           title: 'Today\'s Schedule',
                           onTap: () => _navigateTo(const DailyScheduleScreen()),
-                          trailing: const Icon(
-                            Icons.chevron_right,
-                            color: AppTheme.textTertiary,
-                            size: 20,
-                          ),
+                          trailing: const Icon(Icons.chevron_right, color: AppTheme.textTertiary, size: 20),
                           child: Column(
                             children: [
                               ..._buildSchedulePreview(),
@@ -416,11 +332,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: DashboardCard(
                           title: 'Recent Messages',
                           onTap: () => _navigateTo(const MessagesScreen()),
-                          trailing: const Icon(
-                            Icons.chevron_right,
-                            color: AppTheme.textTertiary,
-                            size: 20,
-                          ),
+                          trailing: const Icon(Icons.chevron_right, color: AppTheme.textTertiary, size: 20),
                           child: Column(
                             children: [
                               ..._buildMessagesPreview(),

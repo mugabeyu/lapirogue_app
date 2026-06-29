@@ -15,6 +15,8 @@ class Guest {
   final String status;
   final String? notes;
   final String? imagePath;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final List<Reservation>? reservations;
 
   Guest({
@@ -32,13 +34,15 @@ class Guest {
     required this.status,
     this.notes,
     this.imagePath,
+    this.createdAt,
+    this.updatedAt,
     this.reservations,
   });
 
   factory Guest.fromJson(Map<String, dynamic> json) {
     return Guest(
       id: json['id'] ?? '',
-      authId: json['auth_id'] ?? '',
+      authId: json['auth_id'] ?? json['auth_user_id'] ?? '',
       guestId: json['guest_id'] ?? '',
       firstName: json['first_name'] ?? '',
       lastName: json['last_name'] ?? '',
@@ -53,6 +57,8 @@ class Guest {
       status: json['status'] ?? 'RESERVED',
       notes: json['notes'],
       imagePath: json['image_path'],
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
       reservations: json['reservations'] != null
           ? (json['reservations'] as List)
               .map((e) => Reservation.fromJson(e))

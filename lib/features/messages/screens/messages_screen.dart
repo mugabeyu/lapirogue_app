@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../core/services/guest_service.dart';
 import '../../../core/services/message_service.dart';
@@ -16,48 +18,70 @@ class MessagesScreen extends StatefulWidget {
 class _MessagesScreenState extends State<MessagesScreen> {
   List<Message> _messages = [];
   bool _isLoading = true;
+  String? _guestId;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  StreamSubscription<List<Map<String, dynamic>>>? _subscription;
 
   @override
   void initState() {
     super.initState();
-    _loadMessages();
+    _initMessages();
   }
 
   @override
   void dispose() {
+    _subscription?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadMessages() async {
-    final guestId = await GuestService().getCurrentGuestId();
-    if (guestId == null) {
+  Future<void> _initMessages() async {
+    _guestId = await GuestService().getCurrentGuestId();
+    if (_guestId == null) {
       setState(() => _isLoading = false);
       return;
     }
 
-    try {
-      final messages = await MessageService().getMessages(guestId);
-      setState(() {
-        _messages = messages;
-        _isLoading = false;
-      });
+    await _loadMessages();
+    _subscribeToMessages();
+  }
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+  void _subscribeToMessages() {
+    _subscription = Supabase.instance.client
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .eq('guest_id', _guestId!)
+        .order('created_at')
+        .listen((_) => _loadMessages());
+  }
+
+  Future<void> _loadMessages() async {
+    _guestId ??= await GuestService().getCurrentGuestId();
+    if (_guestId == null) return;
+
+    try {
+      final messages = await MessageService().getMessages(_guestId!);
+      if (mounted) {
+        setState(() {
+          _messages = messages;
+          _isLoading = false;
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('Error loading messages: $e');
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -65,17 +89,30 @@ class _MessagesScreenState extends State<MessagesScreen> {
     final message = _messageController.text.trim();
     if (message.isEmpty) return;
 
-    final guestId = await GuestService().getCurrentGuestId();
-    if (guestId == null) return;
+    _guestId ??= await GuestService().getCurrentGuestId();
+
+    if (_guestId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to send message: session not found. Please sign in again.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     try {
       final success = await MessageService().sendMessage(
-        guestId: guestId,
+        guestId: _guestId!,
         content: message,
       );
 
       if (success) {
         _messageController.clear();
+        setState(() {});
         await _loadMessages();
       } else {
         if (mounted) {
@@ -87,9 +124,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
     } catch (e) {
       if (kDebugMode) debugPrint('Error sending message: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to send message')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to send message')));
       }
     }
   }
@@ -100,10 +137,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       appBar: AppBar(
         title: const Text('Messages'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadMessages,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadMessages),
         ],
       ),
       body: _isLoading
@@ -119,10 +153,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
                               Icon(
                                 Icons.chat_bubble_outline,
                                 size: 64,
-                                color: AppTheme.textTertiary.withValues(alpha: 0.5),
+                                color: AppTheme.textTertiary.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                               const SizedBox(height: 16),
-                              Text(
+                              const Text(
                                 'No messages yet',
                                 style: TextStyle(
                                   fontSize: 16,
@@ -130,7 +166,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Text(
+                              const Text(
                                 'Start a conversation with hotel staff',
                                 style: TextStyle(
                                   fontSize: 14,
@@ -147,8 +183,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           itemBuilder: (context, index) {
                             final message = _messages[index];
                             final isGuest = message.senderType == 'guest';
-                            final showAvatar = index == 0 ||
-                                _messages[index - 1].senderType != message.senderType;
+                            final showAvatar =
+                                index == 0 ||
+                                _messages[index - 1].senderType !=
+                                    message.senderType;
 
                             return _buildMessageBubble(
                               message: message,
@@ -158,7 +196,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
                           },
                         ),
                 ),
-
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -220,7 +257,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: isGuest ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isGuest
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isGuest && showAvatar)
@@ -228,7 +267,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
               width: 32,
               height: 32,
               margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primary,
                 shape: BoxShape.circle,
               ),
@@ -286,15 +325,11 @@ class _MessagesScreenState extends State<MessagesScreen> {
               width: 32,
               height: 32,
               margin: const EdgeInsets.only(left: 8),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.secondary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 18,
-              ),
+              child: const Icon(Icons.person, color: Colors.white, size: 18),
             )
           else if (isGuest)
             const SizedBox(width: 40),

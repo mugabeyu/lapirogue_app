@@ -56,4 +56,3 @@ class _SessionControllerState extends State<SessionController> {
     return const MainShellScreen();
   }
 }
-

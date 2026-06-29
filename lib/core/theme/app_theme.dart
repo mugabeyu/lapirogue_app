@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'app_typography.dart';
 
 /// La Pirogue Hotel App Theme
 /// Professional luxury hotel color palette
 class AppTheme {
   AppTheme._();
 
-  // Primary Colors - Luxury Teal/Blue
-  static const Color primary = Color(0xFF14567D);
-  static const Color primaryLight = Color(0xFF2E8FB5);
-  static const Color primaryDark = Color(0xFF0D3A52);
+  // Primary Colors - Resort Navy Blue
+  static const Color primary = Color(0xFF002B5C);
+  static const Color primaryLight = Color(0xFF1A4A7A);
+  static const Color primaryDark = Color(0xFF001A38);
 
   // Secondary Colors - Warm Gold/Sand
   static const Color secondary = Color(0xFFD4A574);
@@ -18,11 +20,11 @@ class AppTheme {
   // Accent Colors
   static const Color accentGreen = Color(0xFF4CAF50);
   static const Color accentRed = Color(0xFFE53935);
-  static const Color accentOrange = Color(0xFFFF9800);
+  static const Color accentOrange = Color(0xFFF4A340);
   static const Color accentPurple = Color(0xFF9C27B0);
 
   // Background Colors
-  static const Color background = Color(0xFFF8F6F3);
+  static const Color background = Color(0xFFF8F9FB);
   static const Color surface = Colors.white;
   static const Color cardBackground = Colors.white;
 
@@ -45,6 +47,26 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      fontFamily: GoogleFonts.dmSans().fontFamily,
+      textTheme: GoogleFonts.dmSansTextTheme(
+        const TextTheme(
+          displayLarge: AppTypography.pageTitleLarge,
+          displayMedium: AppTypography.pageTitle,
+          displaySmall: AppTypography.pageTitleSmall,
+          headlineLarge: AppTypography.sectionHeaderLarge,
+          headlineMedium: AppTypography.sectionHeader,
+          headlineSmall: AppTypography.sectionHeaderSmall,
+          titleLarge: AppTypography.sectionHeaderSmall,
+          titleMedium: AppTypography.bodyBold,
+          titleSmall: AppTypography.buttonSmall,
+          bodyLarge: AppTypography.bodyLarge,
+          bodyMedium: AppTypography.body,
+          bodySmall: AppTypography.caption,
+          labelLarge: AppTypography.button,
+          labelMedium: AppTypography.label,
+          labelSmall: AppTypography.chip,
+        ),
+      ),
       colorScheme: const ColorScheme.light(
         primary: primary,
         onPrimary: textOnPrimary,
@@ -63,14 +85,12 @@ class AppTheme {
         onError: Colors.white,
       ),
       scaffoldBackgroundColor: background,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
         backgroundColor: primary,
         foregroundColor: textOnPrimary,
-        titleTextStyle: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
+        titleTextStyle: AppTypography.sectionHeaderSmall.copyWith(
           color: textOnPrimary,
         ),
       ),
@@ -97,10 +117,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppTypography.button,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -111,20 +128,14 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppTypography.button,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: AppTypography.buttonSmall,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -147,24 +158,18 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: accentRed, width: 1),
         ),
-        labelStyle: const TextStyle(
+        labelStyle: AppTypography.label.copyWith(
           color: textSecondary,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
         ),
-        hintStyle: const TextStyle(
+        hintStyle: AppTypography.hint.copyWith(
           color: textTertiary,
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: background,
         selectedColor: primary.withValues(alpha: 0.1),
-        labelStyle: const TextStyle(
+        labelStyle: AppTypography.chip.copyWith(
           color: textPrimary,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
@@ -177,18 +182,15 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         minLeadingWidth: 40,
-        titleTextStyle: TextStyle(
+        titleTextStyle: AppTypography.bodyBold.copyWith(
           color: textPrimary,
-          fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
-        subtitleTextStyle: TextStyle(
+        subtitleTextStyle: AppTypography.caption.copyWith(
           color: textSecondary,
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -197,10 +199,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
         ),
         backgroundColor: textPrimary,
-        contentTextStyle: const TextStyle(
+        contentTextStyle: AppTypography.captionBold.copyWith(
           color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
         ),
       ),
     );
