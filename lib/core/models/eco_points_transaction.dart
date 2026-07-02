@@ -1,32 +1,38 @@
 class EcoPointsTransaction {
   final String id;
   final String guestId;
-  final String txType;
+  final String sourceType;
+  final String sourceRecordId;
+  final String? sourceLabel;
   final int points;
-  final String? description;
+  final double? carbonOffsetKg;
   final String status;
-  final DateTime? createdAt;
+  final DateTime? earnedAt;
 
   EcoPointsTransaction({
     required this.id,
     required this.guestId,
-    required this.txType,
+    this.sourceType = 'MANUAL',
+    this.sourceRecordId = '',
+    this.sourceLabel,
     required this.points,
-    this.description,
-    required this.status,
-    this.createdAt,
+    this.carbonOffsetKg,
+    this.status = 'COMPLETED',
+    this.earnedAt,
   });
 
   factory EcoPointsTransaction.fromJson(Map<String, dynamic> json) {
     return EcoPointsTransaction(
       id: json['id'] ?? '',
       guestId: json['guest_id'] ?? '',
-      txType: json['tx_type'] ?? 'EARN',
+      sourceType: json['source_type'] ?? 'MANUAL',
+      sourceRecordId: json['source_record_id'] ?? '',
+      sourceLabel: json['source_label'],
       points: json['points'] ?? 0,
-      description: json['description'],
+      carbonOffsetKg: (json['carbon_offset_kg'] as num?)?.toDouble(),
       status: json['status'] ?? 'COMPLETED',
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at']) 
+      earnedAt: json['earned_at'] != null 
+          ? DateTime.parse(json['earned_at']) 
           : null,
     );
   }
@@ -35,9 +41,11 @@ class EcoPointsTransaction {
     return {
       'id': id,
       'guest_id': guestId,
-      'tx_type': txType,
+      'source_type': sourceType,
+      'source_record_id': sourceRecordId,
+      'source_label': sourceLabel,
       'points': points,
-      'description': description,
+      'carbon_offset_kg': carbonOffsetKg,
       'status': status,
     };
   }

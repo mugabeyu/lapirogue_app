@@ -10,6 +10,9 @@ class ActivityBooking {
   final String status;
   final String? pickupPoint;
   final String? notes;
+  final String? createdBy;
+  final String? createdByName;
+  final String? origin;
   final DateTime? createdAt;
   final Activity? activity;
 
@@ -23,6 +26,9 @@ class ActivityBooking {
     required this.status,
     this.pickupPoint,
     this.notes,
+    this.createdBy,
+    this.createdByName,
+    this.origin,
     this.createdAt,
     this.activity,
   });
@@ -40,6 +46,9 @@ class ActivityBooking {
       status: json['status'] ?? 'CONFIRMED',
       pickupPoint: json['pickup_point'],
       notes: json['notes'],
+      createdBy: json['created_by'],
+      createdByName: json['created_by_name'],
+      origin: json['origin'],
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at']) 
           : null,
@@ -60,6 +69,8 @@ class ActivityBooking {
       'status': status,
       'pickup_point': pickupPoint,
       'notes': notes,
+      'created_by_name': createdByName,
+      'origin': origin,
     };
   }
 }

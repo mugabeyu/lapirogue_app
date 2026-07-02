@@ -10,6 +10,9 @@ class FoodOrder {
   final double total;
   final String status;
   final String? notes;
+  final String? createdBy;
+  final String? createdByName;
+  final String? origin;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -25,6 +28,9 @@ class FoodOrder {
     required this.total,
     required this.status,
     this.notes,
+    this.createdBy,
+    this.createdByName,
+    this.origin,
     this.createdAt,
     this.updatedAt,
   });
@@ -42,6 +48,9 @@ class FoodOrder {
       total: (json['total'] ?? 0).toDouble(),
       status: json['status'] ?? 'PENDING',
       notes: json['notes'],
+      createdBy: json['created_by'],
+      createdByName: json['created_by_name'],
+      origin: json['origin'],
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at']) 
           : null,
@@ -62,6 +71,8 @@ class FoodOrder {
       'total': total,
       'status': status,
       'notes': notes,
+      'created_by_name': createdByName,
+      'origin': origin,
     };
   }
 }

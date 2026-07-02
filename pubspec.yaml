@@ -37,8 +37,12 @@ dependencies:
   # Supabase for backend services
   supabase_flutter: ^2.12.2
 
-  # Provider for state management
-  provider: ^6.0.0
+  # Riverpod for state management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Go Router for declarative navigation
+  go_router: ^14.8.1
 
   # Intl for date/time formatting
   intl: ^0.20.2
@@ -98,6 +102,15 @@ dependencies:
 
   # Cupertino icons
   cupertino_icons: ^1.0.8
+
+  # Lottie for premium animations
+  lottie: ^3.3.1
+
+  # Shimmer effect
+  shimmer: ^3.0.0
+
+  # Smooth page indicators
+  smooth_page_indicator: ^1.2.0+3
 
 dev_dependencies:
   flutter_test:

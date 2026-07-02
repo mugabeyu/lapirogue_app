@@ -49,16 +49,13 @@ class ActivityService {
       final ecoPoints = (activityPrice / 100).ceil() * 5;
       final pointsToAward = ecoPoints > 0 ? ecoPoints : 25;
 
-      await _client.from('eco_points_tx').insert({
+      await _client.from('guest_eco_point_events').insert({
         'guest_id': guestId,
-        'tx_type': 'EARN',
+        'source_type': 'ACTIVITY',
+        'source_record_id': bookingId,
+        'source_label': 'Completed activity: $activityName',
         'points': pointsToAward,
-        'description': 'Completed activity: $activityName',
         'status': 'COMPLETED',
-      });
-      await _client.rpc('increment_eco_points', params: {
-        'p_guest_id': guestId,
-        'p_points': pointsToAward,
       });
 
       return true;
@@ -80,11 +77,8 @@ class EcoPointsService {
   Future<int> getEcoPointsBalance(String guestId) async {
     try {
       final response = await _client
-          .from('eco_points_balance')
-          .select('points')
-          .eq('guest_id', guestId)
-          .maybeSingle();
-      return (response?['points'] ?? 0) as int;
+          .rpc('get_guest_eco_points', params: {'p_guest_id': guestId});
+      return (response as int?) ?? 0;
     } catch (e) {
       return 0;
     }
@@ -92,12 +86,15 @@ class EcoPointsService {
 
   Future<String> getEcoPointsTier(String guestId) async {
     try {
-      final response = await _client
-          .from('eco_points_balance')
-          .select('tier')
-          .eq('guest_id', guestId)
+      final totalPoints = await getEcoPointsBalance(guestId);
+      final tier = await _client
+          .from('eco_tiers')
+          .select('name')
+          .lte('min_points', totalPoints)
+          .order('min_points', ascending: false)
+          .limit(1)
           .maybeSingle();
-      return (response?['tier'] ?? 'Bronze') as String;
+      return (tier?['name'] ?? 'Bronze') as String;
     } catch (e) {
       return 'Bronze';
     }
@@ -106,10 +103,10 @@ class EcoPointsService {
   Future<List<EcoPointsTransaction>> getTransactions(String guestId) async {
     try {
       final response = await _client
-          .from('eco_points_tx')
+          .from('guest_eco_point_events')
           .select('*')
           .eq('guest_id', guestId)
-          .order('created_at', ascending: false);
+          .order('earned_at', ascending: false);
       return response.map((e) => EcoPointsTransaction.fromJson(e)).toList();
     } catch (e) {
       return [];
@@ -118,12 +115,8 @@ class EcoPointsService {
 
   Future<List<Map<String, dynamic>>> getLeaderboard({int limit = 10}) async {
     try {
-      final response = await _client
-          .from('eco_points_balance')
-          .select('*, guests(first_name, last_name)')
-          .order('points', ascending: false)
-          .limit(limit);
-      return response;
+      final response = await _client.rpc('get_eco_leaderboard', params: {'p_limit': limit});
+      return (response as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
     } catch (e) {
       return [];
     }
@@ -135,16 +128,13 @@ class EcoPointsService {
     required String description,
   }) async {
     try {
-      await _client.from('eco_points_tx').insert({
+      await _client.from('guest_eco_point_events').insert({
         'guest_id': guestId,
-        'tx_type': 'EARN',
+        'source_type': 'MANUAL',
+        'source_record_id': '',
+        'source_label': description,
         'points': points,
-        'description': description,
         'status': 'COMPLETED',
-      });
-      await _client.rpc('increment_eco_points', params: {
-        'p_guest_id': guestId,
-        'p_points': points,
       });
       return true;
     } catch (e) {
@@ -154,11 +144,11 @@ class EcoPointsService {
 
   Future<List<EcoAction>> getEcoActions({bool activeOnly = true}) async {
     try {
-      var query = _client.from('eco_actions').select('*');
+      var query = _client.from('sustainability_activities').select('*');
       if (activeOnly) {
         query = query.eq('is_active', true);
       }
-      final response = await query.order('points', ascending: false);
+      final response = await query.order('default_points', ascending: false);
       return response.map((e) => EcoAction.fromJson(e)).toList();
     } catch (e) {
       return [];
@@ -171,33 +161,26 @@ class EcoPointsService {
   }) async {
     try {
       final actionResponse = await _client
-          .from('eco_actions')
-          .select('title, points, description')
+          .from('sustainability_activities')
+          .select('name, default_points, carbon_offset_kg')
           .eq('id', actionId)
           .maybeSingle();
 
       if (actionResponse == null) return false;
 
-      final actionTitle = actionResponse['title'] ?? 'Eco Action';
-      final actionPoints = actionResponse['points'] ?? 0;
+      final actionName = actionResponse['name'] ?? 'Eco Action';
+      final actionPoints = actionResponse['default_points'] ?? 0;
+      final carbonOffset = actionResponse['carbon_offset_kg'] ?? 0;
 
-      await _client.from('eco_points_tx').insert({
+      await _client.from('guest_eco_point_events').insert({
         'guest_id': guestId,
-        'tx_type': 'EARN',
+        'activity_id': actionId,
+        'source_type': 'ECO_ACTION',
+        'source_record_id': actionId,
+        'source_label': 'Participated in: $actionName',
         'points': actionPoints,
-        'description': 'Participated in: $actionTitle',
+        'carbon_offset_kg': carbonOffset,
         'status': 'COMPLETED',
-      });
-
-      await _client.from('guest_eco_actions').insert({
-        'guest_id': guestId,
-        'eco_action_id': actionId,
-        'earned_points': actionPoints,
-      });
-
-      await _client.rpc('increment_eco_points', params: {
-        'p_guest_id': guestId,
-        'p_points': actionPoints,
       });
 
       return true;

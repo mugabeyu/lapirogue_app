@@ -1,276 +1,200 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/services/guest_service.dart';
-import '../../../core/services/notification_service.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../core/models/notification.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class NotificationsScreen extends StatefulWidget {
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/auth_sheet.dart';
+import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/notifications_provider.dart';
+import '../../../core/services/notification_service.dart';
+
+class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<AppNotification> _notifications = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadNotifications();
-  }
-
-  Future<void> _loadNotifications() async {
-    final guestId = await GuestService().getCurrentGuestId();
-    if (guestId == null) {
-      setState(() => _isLoading = false);
-      return;
+    if (!authState.isAuthenticated) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Notifications'),
+          backgroundColor: AppColors.oceanBlue,
+          foregroundColor: Colors.white,
+        ),
+        body: GestureDetector(
+          onTap: () => showAuthSheet(context, message: 'Sign in to view your notifications.'),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 100, height: 100,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.lightGray),
+                    child: const Icon(Icons.notifications_outlined, size: 48, color: AppColors.textTertiary),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Notifications', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text('Sign in to stay updated', style: TextStyle(color: Colors.grey[600])),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
-    try {
-      final notifications = await NotificationService().getNotifications(guestId);
-      setState(() {
-        _notifications = notifications;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error loading notifications: $e');
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _markAsRead(AppNotification notification) async {
-    if (notification.isRead) return;
-
-    final success = await NotificationService().markAsRead(notification.id);
-    if (success) {
-      setState(() {
-        final index = _notifications.indexWhere((n) => n.id == notification.id);
-        if (index != -1) {
-          _notifications[index] = AppNotification(
-            id: notification.id,
-            guestId: notification.guestId,
-            title: notification.title,
-            message: notification.message,
-            category: notification.category,
-            isRead: true,
-            createdAt: notification.createdAt,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notifications'),
+        backgroundColor: AppColors.oceanBlue,
+        foregroundColor: Colors.white,
+        actions: [
+          TextButton(
+            onPressed: () async {
+              final guest = authState.guest;
+              if (guest != null) {
+                await NotificationService().markAllAsRead(guest.id);
+                ref.invalidate(notificationsProvider);
+              }
+            },
+            child: const Text('Mark All Read', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+      body: ref.watch(notificationsProvider).when(
+        data: (notifications) {
+          if (notifications.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 80, height: 80,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.lightGray),
+                      child: const Icon(Icons.notifications_off_outlined, size: 40, color: AppColors.textTertiary),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('No notifications yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    Text('You\'ll see updates from the hotel here', style: TextStyle(color: Colors.grey[600])),
+                  ],
+                ),
+              ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final notif = notifications[index];
+              return _buildNotification(notif.title, notif.message, _getCategoryIcon(notif.category), _getCategoryColor(notif.category), _formatTime(notif.createdAt), notif.isRead, () async {
+                if (!notif.isRead) {
+                  await NotificationService().markAsRead(notif.id);
+                  ref.invalidate(notificationsProvider);
+                }
+              });
+            },
           );
-        }
-      });
-    }
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error loading notifications: $e')),
+      ),
+    );
   }
 
-  Future<void> _markAllAsRead() async {
-    final guestId = await GuestService().getCurrentGuestId();
-    if (guestId == null) return;
-
-    final success = await NotificationService().markAllAsRead(guestId);
-    if (success) {
-      setState(() {
-        for (var i = 0; i < _notifications.length; i++) {
-          _notifications[i] = AppNotification(
-            id: _notifications[i].id,
-            guestId: _notifications[i].guestId,
-            title: _notifications[i].title,
-            message: _notifications[i].message,
-            category: _notifications[i].category,
-            isRead: true,
-            createdAt: _notifications[i].createdAt,
-          );
-        }
-      });
-    }
+  Widget _buildNotification(String title, String body, IconData icon, Color color, String time, bool isRead, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isRead ? Colors.white : AppColors.oceanBlue.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(16),
+          border: isRead ? null : Border.all(color: AppColors.oceanBlue.withValues(alpha: 0.15)),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isRead ? AppColors.textSecondary : AppColors.textPrimary)),
+                      Text(time, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(body, style: TextStyle(fontSize: 13, color: isRead ? Colors.grey[500] : Colors.grey[600])),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   IconData _getCategoryIcon(String category) {
-    switch (category.toUpperCase()) {
-      case 'ACTIVITY':
-        return Icons.sports;
-      case 'RESERVATION':
-        return Icons.hotel;
-      case 'SCHEDULE':
+    switch (category.toLowerCase()) {
+      case 'message':
+        return Icons.chat;
+      case 'reservation':
+      case 'booking':
         return Icons.calendar_today;
-      case 'BILLING':
-        return Icons.receipt;
-      case 'EMERGENCY':
-        return Icons.warning;
+      case 'payment':
+        return Icons.payment;
+      case 'offer':
+      case 'promotion':
+        return Icons.local_offer;
       default:
         return Icons.notifications;
     }
   }
 
   Color _getCategoryColor(String category) {
-    switch (category.toUpperCase()) {
-      case 'ACTIVITY':
-        return AppTheme.accentGreen;
-      case 'RESERVATION':
-        return AppTheme.primary;
-      case 'SCHEDULE':
-        return AppTheme.secondary;
-      case 'BILLING':
-        return AppTheme.accentOrange;
-      case 'EMERGENCY':
-        return AppTheme.accentRed;
+    switch (category.toLowerCase()) {
+      case 'message':
+        return AppColors.oceanBlue;
+      case 'reservation':
+      case 'booking':
+        return AppColors.statusConfirmed;
+      case 'payment':
+        return AppColors.statusPending;
+      case 'offer':
+      case 'promotion':
+        return AppColors.goldAccent;
+      case 'alert':
+      case 'warning':
+        return AppColors.statusCancelled;
       default:
-        return AppTheme.textSecondary;
+        return AppColors.statusInfo;
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final unreadCount = _notifications.where((n) => !n.isRead).length;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          if (unreadCount > 0)
-            TextButton(
-              onPressed: _markAllAsRead,
-              child: const Text('Mark All Read'),
-            ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadNotifications,
-              child: _notifications.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.notifications_off,
-                            size: 64,
-                            color: AppTheme.textTertiary.withValues(alpha: 0.5),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No notifications yet',
-                            style: TextStyle(color: AppTheme.textTertiary),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _notifications.length,
-                      itemBuilder: (context, index) {
-                        final notification = _notifications[index];
-                        return _buildNotificationCard(notification);
-                      },
-                    ),
-            ),
-    );
-  }
-
-  Widget _buildNotificationCard(AppNotification notification) {
-    final isRead = notification.isRead;
-    final category = notification.category;
-    final createdAt = notification.createdAt ?? DateTime.now();
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: isRead ? 1 : 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _markAsRead(notification),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _getCategoryColor(category).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  _getCategoryIcon(category),
-                  color: _getCategoryColor(category),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            notification.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                        ),
-                        if (!isRead)
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppTheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      notification.message,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, size: 12, color: AppTheme.textTertiary),
-                        const SizedBox(width: 4),
-                        Text(
-                          DateFormat('MMM d, HH:mm').format(createdAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: _getCategoryColor(category).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            category,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: _getCategoryColor(category),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  String _formatTime(DateTime? dt) {
+    if (dt == null) return '';
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
 }

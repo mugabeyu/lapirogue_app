@@ -299,17 +299,13 @@ class ScheduleService {
             .eq('id', item['id']);
 
         if (item['eco_points_awarded'] != true) {
-          await _client.from('eco_points_tx').insert({
+          await _client.from('guest_eco_point_events').insert({
             'guest_id': guestId,
-            'tx_type': 'EARN',
+            'source_type': 'SCHEDULE',
+            'source_record_id': item['id'] ?? '',
+            'source_label': 'Completed scheduled activity: ${item['title']}',
             'points': 25,
-            'description': 'Completed scheduled activity: ${item['title']}',
             'status': 'COMPLETED',
-          });
-
-          await _client.rpc('increment_eco_points', params: {
-            'p_guest_id': guestId,
-            'p_points': 25,
           });
         }
       }

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/content_service.dart';
 import '../../../core/models/site_content_page.dart';
-import '../../../core/models/room.dart';
 import '../../../core/models/hotel_service.dart';
-import '../../../core/models/hotel_service_category.dart';
 import '../../../core/models/emergency_contact.dart';
-import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class HotelInfoScreen extends StatefulWidget {
@@ -17,8 +14,6 @@ class HotelInfoScreen extends StatefulWidget {
 
 class _HotelInfoScreenState extends State<HotelInfoScreen> {
   SiteContentPage? _hotelInfo;
-  List<Room> _rooms = [];
-  List<HotelServiceCategory> _categories = [];
   List<HotelService> _services = [];
   List<EmergencyContact> _emergencyContacts = [];
   bool _isLoading = true;
@@ -33,34 +28,18 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
     try {
       final results = await Future.wait([
         ContentService().getPage('about'),
-        _loadRooms(),
-        ContentService().getServiceCategories(),
         ContentService().getHotelServices(),
         ContentService().getEmergencyContacts(),
       ]);
 
       setState(() {
         _hotelInfo = results[0] as SiteContentPage?;
-        _rooms = results[1] as List<Room>;
-        _categories = results[2] as List<HotelServiceCategory>;
-        _services = results[3] as List<HotelService>;
-        _emergencyContacts = results[4] as List<EmergencyContact>;
+        _services = results[1] as List<HotelService>;
+        _emergencyContacts = results[2] as List<EmergencyContact>;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
-    }
-  }
-
-  Future<List<Room>> _loadRooms() async {
-    try {
-      final response = await SupabaseService.client
-          .from('rooms')
-          .select('*')
-          .order('room_number');
-      return response.map((e) => Room.fromJson(e)).toList();
-    } catch (e) {
-      return [];
     }
   }
 
@@ -110,14 +89,10 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (_hotelInfo != null) _buildAboutSection(),
-                    if (_rooms.isNotEmpty) _buildRoomsSection(),
-                    if (_categories.isNotEmpty || _services.isNotEmpty)
-                      _buildServicesSection(),
+                    if (_services.isNotEmpty) _buildServicesSection(),
                     if (_emergencyContacts.isNotEmpty)
                       _buildEmergencySection(),
                     if (_hotelInfo == null &&
-                        _rooms.isEmpty &&
-                        _categories.isEmpty &&
                         _services.isEmpty &&
                         _emergencyContacts.isEmpty)
                       _buildEmptyState(),
@@ -286,122 +261,6 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                         );
                       }
                       return Text(m.toString(), style: const TextStyle(fontSize: 14));
-                    }).toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRoomsSection() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Our Rooms',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ..._rooms.map((room) => _buildRoomCard(room)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRoomCard(Room room) {
-    final imageUrl = room.imagePaths.isNotEmpty
-        ? room.imagePaths.first
-        : room.imagePath;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (imageUrl != null && imageUrl.isNotEmpty)
-            Image.network(
-              imageUrl,
-              height: 160,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                height: 100,
-                color: AppTheme.primary.withValues(alpha: 0.1),
-                child: const Icon(Icons.hotel, size: 48, color: AppTheme.primary),
-              ),
-            )
-          else
-            Container(
-              height: 100,
-              color: AppTheme.primary.withValues(alpha: 0.1),
-              child: const Icon(Icons.hotel, size: 48, color: AppTheme.primary),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Room ${room.roomNumber} - ${room.type}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Text(
-                      'Rs ${room.price.toStringAsFixed(0)}/night',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                if (room.description != null && room.description!.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    room.description!,
-                    style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (room.capacity > 0) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.people, size: 16, color: AppTheme.textSecondary),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Up to ${room.capacity} guests',
-                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
-                      ),
-                    ],
-                  ),
-                ],
-                if (room.amenities.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: room.amenities.map((amenity) {
-                      return Chip(
-                        avatar: Icon(_iconFromName(amenity), size: 14, color: AppTheme.primary),
-                        label: Text(amenity, style: const TextStyle(fontSize: 12)),
-                        backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
-                        side: BorderSide.none,
-                        visualDensity: VisualDensity.compact,
-                      );
                     }).toList(),
                   ),
                 ],

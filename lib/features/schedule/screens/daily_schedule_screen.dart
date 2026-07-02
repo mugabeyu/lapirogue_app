@@ -2,23 +2,26 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/guest_service.dart';
 import '../../../core/services/schedule_service.dart';
 import '../../../core/services/activity_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/guest_schedule_item.dart';
+import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/reservation_provider.dart';
 import 'package:intl/intl.dart';
 
 /// Daily Schedule Screen - Shows guest schedule items in day-by-day format
 /// with "Mark as Completed" button to earn eco-points.
-class DailyScheduleScreen extends StatefulWidget {
+class DailyScheduleScreen extends ConsumerStatefulWidget {
   const DailyScheduleScreen({super.key});
 
   @override
-  State<DailyScheduleScreen> createState() => _DailyScheduleScreenState();
+  ConsumerState<DailyScheduleScreen> createState() => _DailyScheduleScreenState();
 }
 
-class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
+class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
   List<GuestScheduleItem> _scheduleItems = [];
   bool _isLoading = true;
   DateTime _selectedDate = DateTime.now();
@@ -88,47 +91,47 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
     if (confirmed != true) return;
 
     final scheduleSuccess = await ScheduleService().markItemCompleted(item.id, sourceModule: item.sourceModule);
-    if (!scheduleSuccess) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item already completed or failed to update')),
-        );
-      }
-      return;
+
+    bool pointsAwarded = false;
+    if (scheduleSuccess) {
+      pointsAwarded = await EcoPointsService().earnPoints(
+        guestId: guest.id,
+        points: 25,
+        description: 'Completed scheduled activity: ${item.title}',
+      );
     }
 
-    final pointsSuccess = await EcoPointsService().earnPoints(
-      guestId: guest.id,
-      points: 25,
-      description: 'Completed scheduled activity: ${item.title}',
-    );
-
     if (mounted) {
-      if (pointsSuccess) {
-        setState(() {
-          for (int i = 0; i < _scheduleItems.length; i++) {
-            if (_scheduleItems[i].id == item.id) {
-              _scheduleItems[i] = GuestScheduleItem(
-                id: item.id,
-                guestId: item.guestId,
-                title: item.title,
-                itemType: item.itemType,
-                startAt: item.startAt,
-                endAt: item.endAt,
-                location: item.location,
-                description: item.description,
-                status: 'COMPLETED',
-                color: item.color,
-                sourceModule: item.sourceModule,
-                notes: item.notes,
-              );
-            }
+      setState(() {
+        for (int i = 0; i < _scheduleItems.length; i++) {
+          if (_scheduleItems[i].id == item.id) {
+            _scheduleItems[i] = GuestScheduleItem(
+              id: item.id,
+              guestId: item.guestId,
+              title: item.title,
+              itemType: item.itemType,
+              startAt: item.startAt,
+              endAt: item.endAt,
+              location: item.location,
+              description: item.description,
+              status: 'COMPLETED',
+              color: item.color,
+              sourceModule: item.sourceModule,
+              notes: item.notes,
+            );
           }
-        });
+        }
+      });
+
+      if (pointsAwarded) {
         _showEcoPointsAnimation();
-      } else {
+      } else if (scheduleSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Activity marked but failed to award eco-points')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item already completed or failed to update')),
         );
       }
     }
@@ -195,6 +198,56 @@ class _DailyScheduleScreenState extends State<DailyScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authStateProvider);
+    final reservationState = ref.watch(reservationProvider);
+
+    if (!authState.isAuthenticated) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Daily Schedule')),
+        body: const Center(child: Text('Sign in to view your schedule')),
+      );
+    }
+
+    if (reservationState.isReserved) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Daily Schedule'),
+          backgroundColor: AppTheme.primary,
+          foregroundColor: Colors.white,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80, height: 80,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.lock_outline, size: 40, color: AppTheme.primary),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Your Personalized Itinerary',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Your personalized itinerary will become available after hotel check-in.',
+                  style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Schedule'),

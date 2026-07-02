@@ -27,8 +27,26 @@ class SessionService {
       final response = await _supabase
           .from('guests')
           .select('*, reservations(*, rooms(*))')
-          .eq('auth_user_id', user.id)
+          .eq('auth_id', user.id)
           .maybeSingle();
+
+      if (response != null) return response;
+
+      if (user.email == null) return response;
+
+      final byEmail = await _supabase
+          .from('guests')
+          .select('*, reservations(*, rooms(*))')
+          .eq('email', user.email!)
+          .maybeSingle();
+
+      if (byEmail != null) {
+        await _supabase
+            .from('guests')
+            .update({'auth_id': user.id})
+            .eq('id', byEmail['id']);
+        return byEmail;
+      }
 
       return response;
     } catch (e) {

@@ -12,8 +12,12 @@ class Reservation {
   final String status;
   final double totalAmount;
   final String? notes;
+  final String? createdBy;
+  final String? createdByName;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? confirmationToken;
+  final DateTime? confirmedAt;
   final Room? room;
 
   Reservation({
@@ -28,10 +32,18 @@ class Reservation {
     required this.status,
     required this.totalAmount,
     this.notes,
+    this.createdBy,
+    this.createdByName,
     this.createdAt,
     this.updatedAt,
+    this.confirmationToken,
+    this.confirmedAt,
     this.room,
   });
+
+  bool get isPending => status == 'PENDING';
+  bool get isConfirmed => status == 'CONFIRMED' || status == 'RESERVED';
+  bool get isCheckedIn => status == 'CHECKED_IN';
 
   factory Reservation.fromJson(Map<String, dynamic> json) {
     return Reservation(
@@ -47,11 +59,15 @@ class Reservation {
           : DateTime.now().add(const Duration(days: 1)),
       adults: json['adults'] ?? 1,
       children: json['children'] ?? 0,
-      status: json['status'] ?? 'CONFIRMED',
+      status: json['status'] ?? 'PENDING',
       totalAmount: (json['total_amount'] ?? 0).toDouble(),
       notes: json['notes'],
+      createdBy: json['created_by'],
+      createdByName: json['created_by_name'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
+      confirmationToken: json['confirmation_token'],
+      confirmedAt: json['confirmed_at'] != null ? DateTime.parse(json['confirmed_at']) : null,
       room: json['rooms'] != null ? Room.fromJson(json['rooms']) : null,
     );
   }
@@ -69,6 +85,9 @@ class Reservation {
       'status': status,
       'total_amount': totalAmount,
       'notes': notes,
+      'created_by_name': createdByName,
+      'confirmation_token': confirmationToken,
+      'confirmed_at': confirmedAt?.toIso8601String(),
     };
   }
 }

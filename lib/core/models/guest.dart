@@ -13,8 +13,12 @@ class Guest {
   final DateTime? dateOfBirth;
   final bool vip;
   final String status;
+  final String accountStatus;
   final String? notes;
   final String? imagePath;
+  final String? homeAddress;
+  final String? createdBy;
+  final String? createdByName;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final List<Reservation>? reservations;
@@ -32,8 +36,12 @@ class Guest {
     this.dateOfBirth,
     required this.vip,
     required this.status,
+    this.accountStatus = 'ACTIVE',
     this.notes,
     this.imagePath,
+    this.homeAddress,
+    this.createdBy,
+    this.createdByName,
     this.createdAt,
     this.updatedAt,
     this.reservations,
@@ -55,8 +63,12 @@ class Guest {
           : null,
       vip: json['vip'] ?? false,
       status: json['status'] ?? 'RESERVED',
+      accountStatus: json['account_status'] ?? 'ACTIVE',
       notes: json['notes'],
       imagePath: json['image_path'],
+      homeAddress: json['home_address'],
+      createdBy: json['created_by'],
+      createdByName: json['created_by_name'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
       reservations: json['reservations'] != null
@@ -81,8 +93,11 @@ class Guest {
       'date_of_birth': dateOfBirth?.toIso8601String().split('T').first,
       'vip': vip,
       'status': status,
+      'account_status': accountStatus,
       'notes': notes,
       'image_path': imagePath,
+      'home_address': homeAddress,
+      'created_by_name': createdByName,
     };
   }
 

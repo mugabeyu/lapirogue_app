@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'guest_service.dart';
 
 class PushNotificationService {
@@ -11,9 +13,12 @@ class PushNotificationService {
 
   static SupabaseClient get _client => Supabase.instance.client;
 
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   StreamSubscription? _notificationSubscription;
   bool _initialized = false;
+  bool _fcmAttempted = false;
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -39,11 +44,79 @@ class PushNotificationService {
       if (kDebugMode) debugPrint('Local notifications init error: $e');
     }
 
+    _initFirebaseMessaging();
     _subscribeToRealtimeNotifications();
   }
 
+  Future<void> _initFirebaseMessaging() async {
+    if (_fcmAttempted) return;
+    _fcmAttempted = true;
+
+    try {
+      final settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional) {
+        final token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          await _storeFcmToken(token);
+        }
+
+        FirebaseMessaging.instance.onTokenRefresh.listen(_storeFcmToken);
+      }
+
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationOpenedApp);
+
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        _handleNotificationData(initialMessage.data);
+      }
+
+      if (kDebugMode) debugPrint('Firebase Messaging initialized');
+    } catch (e) {
+      if (kDebugMode) debugPrint('Firebase Messaging init skipped (non-fatal): $e');
+    }
+  }
+
+  Future<void> _storeFcmToken(String token) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      await _client.from('guests').update({'fcm_token': token}).eq('auth_id', userId);
+    } catch (e) {
+      if (kDebugMode) debugPrint('Store FCM token error: $e');
+    }
+  }
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    final title = message.notification?.title ?? message.data['title'] as String? ?? 'Notification';
+    final body = message.notification?.body ?? message.data['body'] as String? ?? '';
+    final payload = message.data['id'] as String? ?? '';
+
+    _showLocalNotification(title, body, payload);
+  }
+
+  void _handleNotificationOpenedApp(RemoteMessage message) {
+    _handleNotificationData(message.data);
+  }
+
+  void _handleNotificationData(Map<String, dynamic> data) {
+    final id = data['id'] as String?;
+    final type = data['type'] as String?;
+    if (kDebugMode) debugPrint('Notification data: id=$id type=$type');
+  }
+
   void _onNotificationTap(NotificationResponse response) {
-    if (kDebugMode) debugPrint('Notification tapped: ${response.payload}');
+    final payload = response.payload;
+    if (payload != null && payload.isNotEmpty) {
+      if (kDebugMode) debugPrint('Notification tapped: $payload');
+    }
   }
 
   void _subscribeToRealtimeNotifications() {

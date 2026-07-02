@@ -37,7 +37,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         PaymentService().getPayments(guestId),
         BillingService().getBillingSummary(guestId),
       ]);
-      
+
       setState(() {
         _payments = results[0] as List<Payment>;
         _billing = results[1] as BillingSummary;
@@ -67,15 +67,24 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       _buildBillingSummary(),
                       const SizedBox(height: 24),
                     ],
-                    
+
                     // Payments List
                     if (_payments.isEmpty)
                       Center(
                         child: Column(
                           children: [
-                            Icon(Icons.receipt_long, size: 64, color: AppTheme.textTertiary.withValues(alpha: 0.5)),
+                            Icon(
+                              Icons.receipt_long,
+                              size: 64,
+                              color: AppTheme.textTertiary.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
                             const SizedBox(height: 16),
-                            Text('No payments found', style: TextStyle(color: AppTheme.textTertiary)),
+                            Text(
+                              'No payments found',
+                              style: TextStyle(color: AppTheme.textTertiary),
+                            ),
                           ],
                         ),
                       )
@@ -91,7 +100,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          ..._payments.map((payment) => _buildPaymentCard(payment)),
+                          ..._payments.map(
+                            (payment) => _buildPaymentCard(payment),
+                          ),
                         ],
                       ),
                   ],
@@ -108,12 +119,64 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: _statusColor(b.status).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _statusColor(b.status).withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _statusIcon(b.status),
+                color: _statusColor(b.status),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Billing Status',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      b.status.replaceAll('_', ' '),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: _statusColor(b.status),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                'MUR ${b.balanceDue.toStringAsFixed(2)} due',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: _statusColor(b.status),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: _buildSummaryCard(
                 'Total Charges',
-                'Rs ${b.totalCharges.toStringAsFixed(2)}',
+                'MUR ${b.totalCharges.toStringAsFixed(2)}',
                 AppTheme.primary,
                 Icons.receipt,
               ),
@@ -122,7 +185,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             Expanded(
               child: _buildSummaryCard(
                 'Total Paid',
-                'Rs ${b.totalPaid.toStringAsFixed(2)}',
+                'MUR ${b.totalPaid.toStringAsFixed(2)}',
                 AppTheme.accentGreen,
                 Icons.check_circle,
               ),
@@ -135,7 +198,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             Expanded(
               child: _buildSummaryCard(
                 'Balance Due',
-                'Rs ${b.balanceDue.toStringAsFixed(2)}',
+                'MUR ${b.balanceDue.toStringAsFixed(2)}',
                 b.balanceDue > 0 ? AppTheme.accentOrange : AppTheme.accentGreen,
                 b.balanceDue > 0 ? Icons.pending : Icons.check_circle,
               ),
@@ -144,11 +207,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         ),
         if (b.totals.isNotEmpty) ...[
           const SizedBox(height: 16),
-          const Text('Breakdown', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text(
+            'Breakdown',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           ...b.totals.entries
-            .where((e) => e.value > 0)
-            .map((e) => _buildBreakdownRow(e.key, e.value)),
+              .where((e) => e.value > 0)
+              .map((e) => _buildBreakdownRow(e.key, e.value)),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Divider(),
@@ -159,7 +225,11 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     );
   }
 
-  Widget _buildBreakdownRow(String label, double amount, {bool isTotal = false}) {
+  Widget _buildBreakdownRow(
+    String label,
+    double amount, {
+    bool isTotal = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -174,7 +244,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             ),
           ),
           Text(
-            'Rs ${amount.toStringAsFixed(2)}',
+            'MUR ${amount.toStringAsFixed(2)}',
             style: TextStyle(
               fontSize: isTotal ? 15 : 13,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
@@ -186,7 +256,12 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     );
   }
 
-  Widget _buildSummaryCard(String title, String amount, Color color, IconData icon) {
+  Widget _buildSummaryCard(
+    String title,
+    String amount,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -201,10 +276,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           const SizedBox(height: 8),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(
@@ -310,7 +382,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 ],
               ),
               Text(
-                'Rs ${amount.toStringAsFixed(2)}',
+                'MUR ${amount.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -330,39 +402,62 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   const Divider(),
                   const Text(
                     'Additional Charges',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
-                  ...extraItems.map((item) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${item['label']}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textSecondary,
+                  ...extraItems.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${item['label']}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textSecondary,
+                            ),
                           ),
-                        ),
-                        Text(
-                          'Rs ${(item['amount'] ?? 0).toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                          Text(
+                            'MUR ${(item['amount'] ?? 0).toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  )),
+                  ),
                 ],
               ),
             ),
         ],
       ),
     );
+  }
+
+  Color _statusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'PAID':
+      case 'COMPLETED':
+        return AppTheme.accentGreen;
+      case 'PARTIALLY_PAID':
+        return AppTheme.accentOrange;
+      default:
+        return AppTheme.accentRed;
+    }
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status.toUpperCase()) {
+      case 'PAID':
+      case 'COMPLETED':
+        return Icons.check_circle;
+      case 'PARTIALLY_PAID':
+        return Icons.timelapse;
+      default:
+        return Icons.pending_actions;
+    }
   }
 }

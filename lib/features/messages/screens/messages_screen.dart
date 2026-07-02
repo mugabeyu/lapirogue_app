@@ -1,340 +1,267 @@
-import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:intl/intl.dart';
-import '../../../core/services/guest_service.dart';
-import '../../../core/services/message_service.dart';
-import '../../../core/models/message.dart';
-import '../../../core/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class MessagesScreen extends StatefulWidget {
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/auth_sheet.dart';
+import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/reservation_provider.dart';
+import '../../../data/providers/messages_provider.dart';
+
+class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
 
   @override
-  State<MessagesScreen> createState() => _MessagesScreenState();
+  ConsumerState<MessagesScreen> createState() => _MessagesScreenState();
 }
 
-class _MessagesScreenState extends State<MessagesScreen> {
-  List<Message> _messages = [];
-  bool _isLoading = true;
-  String? _guestId;
-  final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  StreamSubscription<List<Map<String, dynamic>>>? _subscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _initMessages();
-  }
+class _MessagesScreenState extends ConsumerState<MessagesScreen> {
+  final _textController = TextEditingController();
+  final _scrollController = ScrollController();
+  bool _sending = false;
 
   @override
   void dispose() {
-    _subscription?.cancel();
-    _messageController.dispose();
+    _textController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _initMessages() async {
-    _guestId = await GuestService().getCurrentGuestId();
-    if (_guestId == null) {
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    await _loadMessages();
-    _subscribeToMessages();
-  }
-
-  void _subscribeToMessages() {
-    _subscription = Supabase.instance.client
-        .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('guest_id', _guestId!)
-        .order('created_at')
-        .listen((_) => _loadMessages());
-  }
-
-  Future<void> _loadMessages() async {
-    _guestId ??= await GuestService().getCurrentGuestId();
-    if (_guestId == null) return;
-
-    try {
-      final messages = await MessageService().getMessages(_guestId!);
-      if (mounted) {
-        setState(() {
-          _messages = messages;
-          _isLoading = false;
-        });
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          }
-        });
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
       }
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error loading messages: $e');
-      if (mounted) setState(() => _isLoading = false);
-    }
+    });
   }
 
   Future<void> _sendMessage() async {
-    final message = _messageController.text.trim();
-    if (message.isEmpty) return;
+    final content = _textController.text.trim();
+    if (content.isEmpty) return;
 
-    _guestId ??= await GuestService().getCurrentGuestId();
+    setState(() => _sending = true);
+    _textController.clear();
 
-    if (_guestId == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Unable to send message: session not found. Please sign in again.',
-            ),
-          ),
-        );
-      }
-      return;
-    }
+    final success = await ref.read(messagesControllerProvider).sendMessage(content);
+    if (!mounted) return;
+    setState(() => _sending = false);
 
-    try {
-      final success = await MessageService().sendMessage(
-        guestId: _guestId!,
-        content: message,
+    if (success) {
+      _scrollToBottom();
+    } else {
+      _textController.text = content;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to send message')),
       );
-
-      if (success) {
-        _messageController.clear();
-        setState(() {});
-        await _loadMessages();
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to send message')),
-          );
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error sending message: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to send message')));
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Messages'),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadMessages),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: _messages.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                size: 64,
-                                color: AppTheme.textTertiary.withValues(
-                                  alpha: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'No messages yet',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: AppTheme.textTertiary,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Start a conversation with hotel staff',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _messages.length,
-                          itemBuilder: (context, index) {
-                            final message = _messages[index];
-                            final isGuest = message.senderType == 'guest';
-                            final showAvatar =
-                                index == 0 ||
-                                _messages[index - 1].senderType !=
-                                    message.senderType;
+    final authState = ref.watch(authStateProvider);
+    final reservationState = ref.watch(reservationProvider);
 
-                            return _buildMessageBubble(
-                              message: message,
-                              isGuest: isGuest,
-                              showAvatar: showAvatar,
-                            );
-                          },
-                        ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
+    if (!authState.isAuthenticated) {
+      return GestureDetector(
+        onTap: () => showAuthSheet(context, message: 'Sign in to send messages to the hotel.'),
+        child: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 100, height: 100,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.lightGray),
+                    child: const Icon(Icons.chat_outlined, size: 48, color: AppColors.textTertiary),
                   ),
-                  child: SafeArea(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _messageController,
-                            decoration: InputDecoration(
-                              hintText: 'Type a message...',
-                              filled: true,
-                              fillColor: AppTheme.background,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _sendMessage(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FloatingActionButton(
-                          mini: true,
-                          onPressed: _sendMessage,
-                          backgroundColor: AppTheme.primary,
-                          child: const Icon(Icons.send, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildMessageBubble({
-    required Message message,
-    required bool isGuest,
-    required bool showAvatar,
-  }) {
-    final createdAt = message.createdAt ?? DateTime.now();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: isGuest
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isGuest && showAvatar)
-            Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: const BoxDecoration(
-                color: AppTheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.support_agent,
-                color: Colors.white,
-                size: 18,
-              ),
-            )
-          else if (!isGuest)
-            const SizedBox(width: 40),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: isGuest ? AppTheme.primary : Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isGuest ? 16 : 4),
-                  bottomRight: Radius.circular(isGuest ? 4 : 16),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
+                  const SizedBox(height: 24),
+                  const Text('Messaging', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text('Sign in to send messages to hotel staff', style: TextStyle(color: Colors.grey[600])),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () { Navigator.of(context).pop(); context.push('/login'); },
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.oceanBlue, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                    child: const Text('Sign In'),
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!reservationState.hasActiveReservation) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80, height: 80,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.lightGray),
+                  child: const Icon(Icons.lock_outline, size: 40, color: AppColors.textTertiary),
+                ),
+                const SizedBox(height: 20),
+                const Text('Messaging is available after booking.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => context.push('/rooms'),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.goldAccent, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                  child: const Text('Book a Room'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Messages'),
+        backgroundColor: AppColors.oceanBlue,
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ref.watch(messagesProvider).when(
+              data: (messages) {
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 80, height: 80,
+                            decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.lightGray),
+                            child: const Icon(Icons.chat_outlined, size: 40, color: AppColors.textTertiary),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('No messages yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 8),
+                          Text('Send a message to hotel staff', style: TextStyle(color: Colors.grey[600])),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_scrollController.hasClients) {
+                    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                  }
+                });
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    final isStaff = msg.senderType != 'guest';
+                    return _buildMessageBubble(msg.content, isStaff, _formatTime(msg.createdAt));
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, -2))],
+            ),
+            child: SafeArea(
+              child: Row(
                 children: [
-                  Text(
-                    message.content,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isGuest ? Colors.white : AppTheme.textPrimary,
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      enabled: !_sending,
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                        filled: true,
+                        fillColor: AppColors.lightGray,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('HH:mm').format(createdAt),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isGuest ? Colors.white70 : AppTheme.textTertiary,
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.oceanBlue),
+                    child: IconButton(
+                      icon: _sending
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.send_rounded, color: Colors.white),
+                      onPressed: _sending ? null : _sendMessage,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          if (isGuest && showAvatar)
-            Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(left: 8),
-              decoration: const BoxDecoration(
-                color: AppTheme.secondary,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person, color: Colors.white, size: 18),
-            )
-          else if (isGuest)
-            const SizedBox(width: 40),
         ],
       ),
     );
+  }
+
+  Widget _buildMessageBubble(String message, bool isStaff, String time) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Align(
+        alignment: isStaff ? Alignment.centerLeft : Alignment.centerRight,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: screenWidth * 0.75),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isStaff ? AppColors.lightGray : AppColors.oceanBlue,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(20),
+              topRight: const Radius.circular(20),
+              bottomLeft: isStaff ? const Radius.circular(4) : const Radius.circular(20),
+              bottomRight: isStaff ? const Radius.circular(20) : const Radius.circular(4),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: TextStyle(color: isStaff ? AppColors.textPrimary : Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(time, style: TextStyle(color: isStaff ? AppColors.textTertiary : Colors.white.withValues(alpha: 0.7), fontSize: 11)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatTime(DateTime? dt) {
+    if (dt == null) return '';
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inHours < 48) return 'Yesterday ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    return '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }

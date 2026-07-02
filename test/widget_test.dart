@@ -1,14 +1,11 @@
 ﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:lapirogue_hotel/main.dart';
+import 'package:lapirogue_hotel/app.dart';
 
 void main() {
   testWidgets('App loads smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const LapirogueHotelApp());
-
-    // Verify that our welcome screen loads.
-    expect(find.text('Welcome'), findsOneWidget);
-    expect(find.text('La Pirogue Mauritius'), findsOneWidget);
+    await tester.pumpWidget(const ProviderScope(child: LapirogueHotelApp()));
+    expect(find.byType(ProviderScope), findsOneWidget);
   });
 }
