@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -40,6 +41,16 @@ class _EmailVerificationScreenState
   void initState() {
     super.initState();
     _startTimer();
+    _triggerReauthForReservation();
+  }
+
+  Future<void> _triggerReauthForReservation() async {
+    if (!_isReservationVerification) return;
+    try {
+      await Supabase.instance.client.auth.reauthenticate();
+    } catch (_) {
+      // OTP may take a moment; user can tap "Resend code" if needed
+    }
   }
 
   @override
@@ -86,6 +97,7 @@ class _EmailVerificationScreenState
 
     try {
       if (_isReservationVerification) {
+        // Verify OTP via backend (which uses Supabase Admin with service_role key)
         final baseUrl = await AuthService().baseUrl;
         final response = await http.post(
           Uri.parse('$baseUrl/api/reservations/verify-otp'),
@@ -98,7 +110,7 @@ class _EmailVerificationScreenState
         );
         final payload = jsonDecode(response.body) as Map<String, dynamic>;
         if (response.statusCode >= 400 || payload['success'] != true) {
-          throw Exception(payload['error'] ?? 'Verification failed');
+          throw Exception(payload['error'] ?? 'Reservation confirmation failed');
         }
         await ref.read(reservationProvider.notifier).refresh();
       } else {
@@ -134,19 +146,7 @@ class _EmailVerificationScreenState
 
     try {
       if (_isReservationVerification) {
-        final baseUrl = await AuthService().baseUrl;
-        final response = await http.post(
-          Uri.parse('$baseUrl/api/reservations/resend-otp'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'email': widget.email,
-            'token': widget.verificationId,
-          }),
-        );
-        final payload = jsonDecode(response.body) as Map<String, dynamic>;
-        if (response.statusCode >= 400 || payload['success'] != true) {
-          throw Exception(payload['error'] ?? 'Failed to resend code');
-        }
+        await Supabase.instance.client.auth.reauthenticate();
       } else {
         await Supabase.instance.client.auth.resend(
           email: widget.email,
@@ -231,12 +231,16 @@ class _EmailVerificationScreenState
                       controller: _otpControllers[index],
                       focusNode: _focusNodes[index],
                       textAlign: TextAlign.center,
-                      keyboardType: TextInputType.number,
-                      maxLength: 1,
+                      keyboardType: TextInputType.text,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(1)],
+                      autofocus: index == 0,
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
+                        color: Colors.black,
                       ),
+                      cursorColor: AppColors.oceanBlue,
+                      textAlignVertical: TextAlignVertical.center,
                       decoration: InputDecoration(
                         counterText: '',
                         filled: true,
