@@ -68,7 +68,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: ColorScheme.light(
-            primary: AppColors.oceanBlue,
+            primary: AppColors.darkNavy,
             onPrimary: Colors.white,
             surface: Colors.white,
           ),
@@ -226,7 +226,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
           SliverAppBar(
             expandedHeight: 320,
             pinned: true,
-            backgroundColor: AppColors.oceanBlue,
+            backgroundColor: AppColors.darkNavy,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () => context.pop(),
@@ -241,10 +241,10 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                       fit: BoxFit.cover,
                       placeholder: (_, _) => Container(color: Colors.grey[300]),
                       errorWidget: (_, _, _) =>
-                          Container(color: AppColors.oceanBlue),
+                          Container(color: AppColors.darkNavy),
                     )
                   else
-                    Container(color: AppColors.oceanBlue),
+                    Container(color: AppColors.darkNavy),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -328,7 +328,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.oceanBlue,
+                          color: AppColors.darkNavy,
                         ),
                       ),
                     ],
@@ -416,10 +416,10 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.oceanBlue.withValues(alpha: 0.05),
+                      color: AppColors.darkNavy.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.oceanBlue.withValues(alpha: 0.1),
+                        color: AppColors.darkNavy.withValues(alpha: 0.1),
                       ),
                     ),
                     child: Row(
@@ -437,7 +437,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.oceanBlue,
+                            color: AppColors.darkNavy,
                           ),
                         ),
                       ],
@@ -521,7 +521,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
         onTap: onTap,
         child: Row(
           children: [
-            Icon(Icons.calendar_today, color: AppColors.oceanBlue, size: 20),
+            Icon(Icons.calendar_today, color: AppColors.darkNavy, size: 20),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,7 +565,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
         children: [
           Icon(
             label == 'Adults' ? Icons.person : Icons.child_care,
-            color: AppColors.oceanBlue,
+            color: AppColors.darkNavy,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -591,7 +591,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
             onPressed: value < max ? () => onChanged(value + 1) : null,
-            color: AppColors.oceanBlue,
+            color: AppColors.darkNavy,
             iconSize: 22,
           ),
         ],

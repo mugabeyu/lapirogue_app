@@ -51,7 +51,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reset Password'),
-        backgroundColor: AppColors.oceanBlue,
+        backgroundColor: AppColors.darkNavy,
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -73,7 +73,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ElevatedButton(
                     onPressed: () => context.pop(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.oceanBlue,
+                      backgroundColor: AppColors.darkNavy,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                     ),
@@ -91,9 +91,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.oceanBlue.withValues(alpha: 0.1),
+                        color: AppColors.darkNavy.withValues(alpha: 0.1),
                       ),
-                      child: const Icon(Icons.lock_reset_rounded, color: AppColors.oceanBlue, size: 40),
+                      child: const Icon(Icons.lock_reset_rounded, color: AppColors.darkNavy, size: 40),
                     ),
                     const SizedBox(height: 24),
                     const Text('Forgot your password?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
@@ -115,7 +115,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _sendResetLink,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.oceanBlue,
+                          backgroundColor: AppColors.darkNavy,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

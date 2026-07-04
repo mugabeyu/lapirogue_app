@@ -20,7 +20,7 @@ class ContactSupportScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.headset_mic, color: AppColors.oceanBlue, size: 28),
+                      Icon(Icons.headset_mic, color: AppColors.darkNavy, size: 28),
                       SizedBox(width: 12),
                       Text('We\'re here to help', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
                     ],
@@ -54,8 +54,8 @@ class ContactSupportScreen extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: AppColors.oceanBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: AppColors.oceanBlue),
+          decoration: BoxDecoration(color: AppColors.darkNavy.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: AppColors.darkNavy),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Column(

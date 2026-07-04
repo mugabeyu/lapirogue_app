@@ -1,17 +1,14 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../core/services/auth_service.dart';
-import '../../../core/services/session_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/reservation_gate.dart';
 import '../../../core/models/menu_item.dart';
+import '../../booking/screens/booking_screen.dart';
 
 class DiningScreen extends ConsumerStatefulWidget {
   const DiningScreen({super.key});
@@ -71,211 +68,20 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
     return grouped;
   }
 
-  Future<void> _placeOrder(MenuItem item, int quantity, String notes) async {
-    final guest = await SessionService.getCurrentGuest();
-    if (guest == null) {
-      throw Exception('Please sign in to place an order.');
-    }
-
-    final subtotal = item.price * quantity;
-    final baseUrl = await AuthService().baseUrl;
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/food-orders'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'guestId': guest['id'].toString(),
-        'items': [
-          {
-            'id': item.id,
-            'name': item.name,
-            'quantity': quantity,
-            'price': item.price,
-          },
-        ],
-        'subtotal': subtotal,
-        'serviceCharge': 0,
-        'taxAmount': 0,
-        'total': subtotal,
-        'notes': notes.trim().isEmpty ? null : notes.trim(),
-        'origin': 'MOBILE_APP',
-      }),
+  Future<void> _orderItem(MenuItem item) async {
+    if (!mounted) return;
+    context.push(
+      '/booking',
+      extra: BookingItem(
+        type: BookingType.dining,
+        id: item.id,
+        name: item.name,
+        imagePath: item.imagePath,
+        price: item.price,
+        category: item.category,
+        description: item.description,
+      ),
     );
-
-    if (response.statusCode >= 400) {
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(payload['error'] ?? 'Unable to place order');
-    }
-  }
-
-  Future<void> _showOrderSheet(MenuItem item) async {
-    final notesController = TextEditingController();
-    var quantity = 1;
-    var isSubmitting = false;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final total = item.price * quantity;
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              padding: EdgeInsets.fromLTRB(
-                24,
-                16,
-                24,
-                24 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 44,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.lightGray2,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(item.name, style: AppTypography.sectionHeader),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.description?.trim().isNotEmpty == true
-                          ? item.description!
-                          : 'Prepared fresh by our culinary team.',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Quantity',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: quantity > 1
-                              ? () => setSheetState(() => quantity -= 1)
-                              : null,
-                          icon: const Icon(Icons.remove_circle_outline),
-                        ),
-                        Text('$quantity', style: AppTypography.bodyBold),
-                        IconButton(
-                          onPressed: () => setSheetState(() => quantity += 1),
-                          icon: const Icon(Icons.add_circle_outline),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: notesController,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Special instructions',
-                        hintText:
-                            'No onions, extra spicy, deliver after 8 PM...',
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Total', style: AppTypography.bodyBold),
-                        Text(
-                          'MUR ${total.toStringAsFixed(0)}',
-                          style: AppTypography.priceSmall.copyWith(
-                            color: AppColors.oceanBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isSubmitting
-                            ? null
-                            : () async {
-                                setSheetState(() => isSubmitting = true);
-                                try {
-                                  await _placeOrder(
-                                    item,
-                                    quantity,
-                                    notesController.text,
-                                  );
-                                  if (!mounted) return;
-                                  Navigator.of(this.context).pop();
-                                  ScaffoldMessenger.of(
-                                    this.context,
-                                  ).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '${item.name} ordered successfully.',
-                                      ),
-                                      backgroundColor:
-                                          AppColors.statusConfirmed,
-                                    ),
-                                  );
-                                } catch (error) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(
-                                      this.context,
-                                    ).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          error.toString().replaceFirst(
-                                            'Exception: ',
-                                            '',
-                                          ),
-                                        ),
-                                        backgroundColor:
-                                            AppColors.statusCancelled,
-                                      ),
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted) {
-                                    setSheetState(() => isSubmitting = false);
-                                  }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.oceanBlue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        child: Text(
-                          isSubmitting ? 'Placing order...' : 'Order now',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    notesController.dispose();
   }
 
   @override
@@ -288,8 +94,18 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Dining'),
-          backgroundColor: AppColors.oceanBlue,
+          backgroundColor: AppColors.darkNavy,
           foregroundColor: Colors.white,
+          actions: [
+            TextButton.icon(
+              onPressed: () => context.push('/orders'),
+              icon: const Icon(Icons.receipt_outlined, size: 18, color: Colors.white),
+              label: const Text(
+                'My Orders',
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ),
+          ],
         ),
         backgroundColor: AppColors.surfaceLight,
         body: _isLoading
@@ -310,7 +126,7 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                             gradient: const LinearGradient(
                               colors: [
                                 AppColors.goldAccent,
-                                AppColors.oceanBlue,
+                                AppColors.darkNavy,
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -321,7 +137,7 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                             children: [
                               Text(
                                 'Dining at your fingertips',
-                                style: AppTypography.sectionHeader.copyWith(
+                                style: AppTypography.sectionTitle.copyWith(
                                   color: Colors.white,
                                 ),
                               ),
@@ -370,14 +186,14 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                               labelStyle: TextStyle(
                                 color: selected
                                     ? Colors.white
-                                    : AppColors.oceanBlue,
+                                    : AppColors.darkNavy,
                                 fontWeight: FontWeight.w600,
                               ),
                               backgroundColor: Colors.white,
-                              selectedColor: AppColors.oceanBlue,
+                              selectedColor: AppColors.darkNavy,
                               side: BorderSide(
                                 color: selected
-                                    ? AppColors.oceanBlue
+                                    ? AppColors.darkNavy
                                     : AppColors.lightGray2,
                               ),
                               shape: RoundedRectangleBorder(
@@ -399,7 +215,7 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                             children: [
                               Text(
                                 entry.key,
-                                style: AppTypography.sectionHeaderSmall,
+                                style: AppTypography.cardTitle,
                               ),
                               const SizedBox(height: 6),
                               Text(
@@ -414,7 +230,7 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                                   padding: const EdgeInsets.only(bottom: 16),
                                   child: _DiningCard(
                                     item: item,
-                                    onOrder: () => _showOrderSheet(item),
+                                    onOrder: () => _orderItem(item),
                                   ),
                                 ),
                               ),
@@ -424,10 +240,10 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                       ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  ],
-                ),
-              ),
+          ],
+        ),
       ),
+    ),
     );
   }
 }
@@ -440,7 +256,9 @@ class _DiningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onOrder,
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(26),
@@ -483,7 +301,7 @@ class _DiningCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.name,
-                        style: AppTypography.sectionHeaderSmall.copyWith(
+                        style: AppTypography.cardTitle.copyWith(
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -492,7 +310,7 @@ class _DiningCard extends StatelessWidget {
                     Text(
                       'MUR ${item.price.toStringAsFixed(0)}',
                       style: AppTypography.priceSmall.copyWith(
-                        color: AppColors.oceanBlue,
+                        color: AppColors.darkNavy,
                       ),
                     ),
                   ],
@@ -533,7 +351,7 @@ class _DiningCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: item.isAvailable ? onOrder : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.oceanBlue,
+                      backgroundColor: AppColors.darkNavy,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
@@ -552,6 +370,7 @@ class _DiningCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -566,7 +385,7 @@ class _DiningFallback extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.sandBeige, AppColors.lightGray],
+          colors: [AppColors.goldAccentLight, AppColors.lightGray],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -575,7 +394,7 @@ class _DiningFallback extends StatelessWidget {
         child: Icon(
           _iconForCategory(category),
           size: 52,
-          color: AppColors.oceanBlue.withValues(alpha: 0.55),
+          color: AppColors.darkNavy.withValues(alpha: 0.55),
         ),
       ),
     );
@@ -609,11 +428,11 @@ class _DiningMetaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: AppColors.oceanBlue),
+          Icon(icon, size: 15, color: AppColors.darkNavy),
           const SizedBox(width: 6),
           Text(
             label,
-            style: AppTypography.captionSmallBold.copyWith(
+            style: AppTypography.captionMedium.copyWith(
               color: AppColors.textPrimary,
             ),
           ),
@@ -645,7 +464,7 @@ class _DiningStatPill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: AppTypography.captionSmallBold.copyWith(color: Colors.white),
+            style: AppTypography.captionMedium.copyWith(color: Colors.white),
           ),
         ],
       ),

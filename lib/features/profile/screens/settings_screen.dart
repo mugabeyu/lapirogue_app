@@ -26,7 +26,7 @@ class SettingsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
-        leading: Icon(icon, color: AppColors.oceanBlue),
+        leading: Icon(icon, color: AppColors.darkNavy),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
         subtitle: Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey[500])),
         trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),

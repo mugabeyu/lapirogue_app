@@ -31,7 +31,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gallery'),
-        backgroundColor: AppColors.oceanBlue,
+        backgroundColor: AppColors.darkNavy,
         foregroundColor: Colors.white,
       ),
       body: GridView.builder(
@@ -57,7 +57,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(image.icon, size: 40, color: AppColors.oceanBlue.withValues(alpha: 0.3)),
+                    Icon(image.icon, size: 40, color: AppColors.darkNavy.withValues(alpha: 0.3)),
                     const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),

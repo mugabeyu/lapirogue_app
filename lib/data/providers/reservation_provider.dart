@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/models/reservation.dart';
 import '../../core/services/session_service.dart';
+import 'auth_provider.dart';
 
 enum ReservationStatusType {
   none,
@@ -110,15 +111,32 @@ class ReservationNotifier extends StateNotifier<ReservationState> {
     }
   }
 
+  void clear() {
+    state = const ReservationState();
+  }
+
   Future<void> refresh() async {
     final guest = await SessionService.getCurrentGuest();
     if (guest != null) {
       await loadReservations(guest['id'].toString());
+    } else {
+      clear();
     }
   }
 }
 
 final reservationProvider =
     StateNotifierProvider<ReservationNotifier, ReservationState>((ref) {
-      return ReservationNotifier();
+      final notifier = ReservationNotifier();
+
+      ref.listen(authStateProvider, (previous, next) {
+        final guestId = next.guest?.id;
+        if (next.isAuthenticated && guestId != null) {
+          notifier.loadReservations(guestId);
+        } else if (!next.isAuthenticated) {
+          notifier.clear();
+        }
+      }, fireImmediately: true);
+
+      return notifier;
     });

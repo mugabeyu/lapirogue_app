@@ -55,7 +55,6 @@ class ActivityService {
         'source_record_id': bookingId,
         'source_label': 'Completed activity: $activityName',
         'points': pointsToAward,
-        'status': 'COMPLETED',
       });
 
       return true;
@@ -64,7 +63,6 @@ class ActivityService {
       return false;
     }
   }
-
 }
 
 class EcoPointsService {
@@ -76,8 +74,10 @@ class EcoPointsService {
 
   Future<int> getEcoPointsBalance(String guestId) async {
     try {
-      final response = await _client
-          .rpc('get_guest_eco_points', params: {'p_guest_id': guestId});
+      final response = await _client.rpc(
+        'get_guest_eco_points',
+        params: {'p_guest_id': guestId},
+      );
       return (response as int?) ?? 0;
     } catch (e) {
       return 0;
@@ -115,7 +115,10 @@ class EcoPointsService {
 
   Future<List<Map<String, dynamic>>> getLeaderboard({int limit = 10}) async {
     try {
-      final response = await _client.rpc('get_eco_leaderboard', params: {'p_limit': limit});
+      final response = await _client.rpc(
+        'get_eco_leaderboard',
+        params: {'p_limit': limit},
+      );
       return (response as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
     } catch (e) {
       return [];
@@ -126,16 +129,17 @@ class EcoPointsService {
     required String guestId,
     required int points,
     required String description,
+    String sourceType = 'MANUAL',
+    String? sourceRecordId,
   }) async {
     try {
-      await _client.from('guest_eco_point_events').insert({
+      await _client.from('guest_eco_point_events').upsert({
         'guest_id': guestId,
-        'source_type': 'MANUAL',
-        'source_record_id': '',
+        'source_type': sourceType,
+        'source_record_id': sourceRecordId ?? '',
         'source_label': description,
         'points': points,
-        'status': 'COMPLETED',
-      });
+      }, onConflict: 'source_type,source_record_id');
       return true;
     } catch (e) {
       return false;
@@ -180,7 +184,6 @@ class EcoPointsService {
         'source_label': 'Participated in: $actionName',
         'points': actionPoints,
         'carbon_offset_kg': carbonOffset,
-        'status': 'COMPLETED',
       });
 
       return true;

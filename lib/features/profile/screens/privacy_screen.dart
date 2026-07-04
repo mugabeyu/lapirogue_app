@@ -60,7 +60,7 @@ class PrivacyScreen extends StatelessWidget {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
         value: value,
         onChanged: (_) {},
-        secondary: const Icon(Icons.analytics_outlined, color: AppColors.oceanBlue),
+        secondary: const Icon(Icons.analytics_outlined, color: AppColors.darkNavy),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );

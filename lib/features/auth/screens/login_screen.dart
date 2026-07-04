@@ -26,12 +26,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      ref.read(authStateProvider.notifier).login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      await ref
+          .read(authStateProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text);
+      if (!mounted) return;
+      final authState = ref.read(authStateProvider);
+      if (authState.isAuthenticated && authState.error == null) {
+        context.go('/');
+      }
     }
   }
 
@@ -47,10 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.oceanBlue,
-              AppColors.oceanBlueDark,
-            ],
+            colors: [AppColors.darkNavy, AppColors.darkNavyDark],
           ),
         ),
         child: SafeArea(
@@ -70,14 +71,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 20),
                 Text(
                   'La Pirogue',
-                  style: AppTypography.pageTitle.copyWith(
+                  style: AppTypography.heading.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
                   'Mauritius',
-                  style: AppTypography.bodyLarge.copyWith(
+                  style: AppTypography.body.copyWith(
                     color: AppColors.goldAccent,
                     letterSpacing: 4,
                   ),
@@ -93,8 +94,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           hintText: 'Email address',
-                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-                          prefixIcon: Icon(Icons.email_outlined, color: Colors.white.withValues(alpha: 0.5)),
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
                           filled: true,
                           fillColor: Colors.white.withValues(alpha: 0.1),
                           border: OutlineInputBorder(
@@ -107,10 +113,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: AppColors.goldAccent, width: 1.5),
+                            borderSide: const BorderSide(
+                              color: AppColors.goldAccent,
+                              width: 1.5,
+                            ),
                           ),
                         ),
-                        validator: (v) => v != null && v.contains('@') ? null : 'Enter a valid email',
+                        validator: (v) => v != null && v.contains('@')
+                            ? null
+                            : 'Enter a valid email',
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -119,14 +130,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           hintText: 'Password',
-                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-                          prefixIcon: Icon(Icons.lock_outline, color: Colors.white.withValues(alpha: 0.5)),
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.lock_outline,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
                               color: Colors.white.withValues(alpha: 0.5),
                             ),
-                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white.withValues(alpha: 0.1),
@@ -140,10 +160,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: AppColors.goldAccent, width: 1.5),
+                            borderSide: const BorderSide(
+                              color: AppColors.goldAccent,
+                              width: 1.5,
+                            ),
                           ),
                         ),
-                        validator: (v) => v != null && v.length >= 6 ? null : 'Password must be 6+ characters',
+                        validator: (v) => v != null && v.length >= 6
+                            ? null
+                            : 'Password must be 6+ characters',
                       ),
                       const SizedBox(height: 8),
                       Align(
@@ -152,7 +177,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: () => context.push('/forgot-password'),
                           child: Text(
                             'Forgot Password?',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
                           ),
                         ),
                       ),
@@ -171,8 +198,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             elevation: 4,
                           ),
                           child: authState.isLoading
-                              ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
@@ -188,12 +228,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             authState.error!,
-                            style: const TextStyle(color: Colors.red, fontSize: 13),
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -206,7 +253,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     Text(
                       "Don't have an account? ",
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
                     ),
                     GestureDetector(
                       onTap: () => context.push('/register'),
@@ -219,14 +268,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Continue as Guest',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    decoration: TextDecoration.underline,
-                  ),
                 ),
                 const SizedBox(height: 40),
               ],

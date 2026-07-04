@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/auth_provider.dart';
@@ -40,9 +41,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!mounted) return;
 
     if (success) {
-      context.push('/email-verification', extra: {
-        'email': _emailCtrl.text.trim(),
-      });
+      if (Supabase.instance.client.auth.currentSession != null) {
+        await notifier.refreshGuest();
+        if (!mounted) return;
+        context.go('/');
+      } else {
+        context.push(
+          '/email-verification',
+          extra: {'email': _emailCtrl.text.trim()},
+        );
+      }
     } else {
       final error = ref.read(authStateProvider).error;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,7 +70,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Account'),
-        backgroundColor: AppColors.oceanBlue,
+        backgroundColor: AppColors.darkNavy,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -73,9 +81,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              const Text('Create your account', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+              const Text(
+                'Create your account',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 4),
-              Text('Enter your email and choose a password', style: TextStyle(color: Colors.grey[600])),
+              Text(
+                'Enter your email and choose a password',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
               const SizedBox(height: 32),
               TextFormField(
                 controller: _emailCtrl,
@@ -98,11 +112,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   labelText: 'Password',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
-                validator: (v) => v != null && v.length >= 6 ? null : 'Password must be 6+ characters',
+                validator: (v) => v != null && v.length >= 6
+                    ? null
+                    : 'Password must be 6+ characters',
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -112,11 +133,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   labelText: 'Confirm Password',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                    icon: Icon(
+                      _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscureConfirm = !_obscureConfirm),
                   ),
                 ),
-                validator: (v) => v == _passwordCtrl.text ? null : 'Passwords do not match',
+                validator: (v) =>
+                    v == _passwordCtrl.text ? null : 'Passwords do not match',
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -127,11 +152,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     backgroundColor: AppColors.goldAccent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: isLoading
-                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],

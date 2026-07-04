@@ -87,7 +87,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () { Navigator.of(context).pop(); context.push('/login'); },
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.oceanBlue, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.darkNavy, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                     child: const Text('Sign In'),
                   ),
                 ],
@@ -129,7 +129,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Messages'),
-        backgroundColor: AppColors.oceanBlue,
+        backgroundColor: AppColors.darkNavy,
         foregroundColor: Colors.white,
       ),
       body: Column(
@@ -203,7 +203,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.oceanBlue),
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.darkNavy),
                     child: IconButton(
                       icon: _sending
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
@@ -230,7 +230,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
           constraints: BoxConstraints(maxWidth: screenWidth * 0.75),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isStaff ? AppColors.lightGray : AppColors.oceanBlue,
+            color: isStaff ? AppColors.lightGray : AppColors.darkNavy,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(20),
               topRight: const Radius.circular(20),

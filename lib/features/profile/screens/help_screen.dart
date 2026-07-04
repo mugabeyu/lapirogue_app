@@ -35,7 +35,7 @@ class HelpScreen extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ExpansionTile(
         title: Text(question, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-        leading: const Icon(Icons.help_outline, color: AppColors.oceanBlue),
+        leading: const Icon(Icons.help_outline, color: AppColors.darkNavy),
         shape: const Border(),
         collapsedShape: const Border(),
         children: [

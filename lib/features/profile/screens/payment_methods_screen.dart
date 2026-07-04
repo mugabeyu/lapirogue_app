@@ -66,8 +66,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: AppColors.oceanBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                      child: Icon(m['type'] == 'Visa' ? Icons.credit_card : Icons.credit_card, color: AppColors.oceanBlue),
+                      decoration: BoxDecoration(color: AppColors.darkNavy.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                      child: Icon(m['type'] == 'Visa' ? Icons.credit_card : Icons.credit_card, color: AppColors.darkNavy),
                     ),
                     title: Text('${m['type']} •••• ${m['last4']}', style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text('Expires ${m['expiry']}', style: TextStyle(color: Colors.grey[500], fontSize: 13)),

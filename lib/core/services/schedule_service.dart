@@ -305,7 +305,6 @@ class ScheduleService {
             'source_record_id': item['id'] ?? '',
             'source_label': 'Completed scheduled activity: ${item['title']}',
             'points': 25,
-            'status': 'COMPLETED',
           });
         }
       }

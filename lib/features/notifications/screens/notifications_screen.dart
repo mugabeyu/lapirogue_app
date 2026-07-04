@@ -18,7 +18,7 @@ class NotificationsScreen extends ConsumerWidget {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Notifications'),
-          backgroundColor: AppColors.oceanBlue,
+          backgroundColor: AppColors.darkNavy,
           foregroundColor: Colors.white,
         ),
         body: GestureDetector(
@@ -49,7 +49,7 @@ class NotificationsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
-        backgroundColor: AppColors.oceanBlue,
+        backgroundColor: AppColors.darkNavy,
         foregroundColor: Colors.white,
         actions: [
           TextButton(
@@ -114,9 +114,9 @@ class NotificationsScreen extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isRead ? Colors.white : AppColors.oceanBlue.withValues(alpha: 0.03),
+          color: isRead ? Colors.white : AppColors.darkNavy.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(16),
-          border: isRead ? null : Border.all(color: AppColors.oceanBlue.withValues(alpha: 0.15)),
+          border: isRead ? null : Border.all(color: AppColors.darkNavy.withValues(alpha: 0.15)),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Row(
@@ -170,7 +170,7 @@ class NotificationsScreen extends ConsumerWidget {
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'message':
-        return AppColors.oceanBlue;
+        return AppColors.darkNavy;
       case 'reservation':
       case 'booking':
         return AppColors.statusConfirmed;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -28,7 +29,7 @@ class ProfileScreen extends ConsumerWidget {
               const Text('Profile Photo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.oceanBlue),
+                leading: const Icon(Icons.camera_alt, color: AppColors.darkNavy),
                 title: const Text('Take Photo'),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -36,7 +37,7 @@ class ProfileScreen extends ConsumerWidget {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: AppColors.oceanBlue),
+                leading: const Icon(Icons.photo_library, color: AppColors.darkNavy),
                 title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -123,7 +124,7 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () => context.push('/login'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.oceanBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.darkNavy, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                   child: const Text('Login'),
                 ),
                 const SizedBox(height: 12),
@@ -147,12 +148,12 @@ class ProfileScreen extends ConsumerWidget {
           SliverAppBar(
             expandedHeight: 240,
             pinned: true,
-            backgroundColor: AppColors.oceanBlue,
+            backgroundColor: AppColors.darkNavy,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.oceanBlue, AppColors.oceanBlueDark],
+                    colors: [AppColors.darkNavy, AppColors.darkNavyDark],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -184,7 +185,7 @@ class ProfileScreen extends ConsumerWidget {
                             child: Container(
                               width: 28, height: 28,
                               decoration: BoxDecoration(
-                                color: AppColors.oceanBlue,
+                                color: AppColors.darkNavy,
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white, width: 2),
                               ),
@@ -205,35 +206,49 @@ class ProfileScreen extends ConsumerWidget {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
                 children: [
-                  _buildSection('Personal Information', [
-                    _buildInfoItem(Icons.email_outlined, 'Email', guest.email),
-                    _buildInfoItem(Icons.phone_outlined, 'Phone', guest.phone ?? 'Not set'),
-                    if (guest.homeAddress != null)
-                      _buildInfoItem(Icons.home_outlined, 'Address', guest.homeAddress!),
+                  _buildStatusBadge(guest),
+                  const SizedBox(height: 16),
+                  _buildSection('Personal Details', [
+                    _buildRow(Icons.person_outline, 'First Name', guest.firstName),
+                    _buildRow(Icons.person_outline, 'Last Name', guest.lastName),
+                    _buildRow(Icons.flag_outlined, 'Nationality', guest.nationality ?? 'Not provided'),
+                    _buildRow(Icons.cake_outlined, 'Date of Birth', guest.dateOfBirth != null ? DateFormat('MMM dd, yyyy').format(guest.dateOfBirth!) : 'Not provided'),
+                    _buildRow(Icons.assignment_outlined, 'Passport / ID', guest.passport ?? 'Not provided'),
                   ]),
                   const SizedBox(height: 12),
-                  _buildSection('Support', [
-                    _buildMenuItem(Icons.star_outline, 'Leave Feedback', () => context.push('/feedback')),
+                  _buildSection('Contact', [
+                    _buildRow(Icons.email_outlined, 'Email', guest.email),
+                    _buildRow(Icons.phone_outlined, 'Phone', guest.phone ?? 'Not provided'),
+                    _buildRow(Icons.home_outlined, 'Home Address', guest.homeAddress ?? 'Not provided'),
                   ]),
                   const SizedBox(height: 12),
-                  _buildSection('Hotel', [
+                  _buildSection('Account', [
+                    _buildRow(Icons.qr_code, 'Guest ID', guest.guestId),
+                    _buildRow(Icons.badge_outlined, 'Status', guest.status),
+                    _buildRow(Icons.shield_outlined, 'Account Status', guest.accountStatus),
+                    _buildRow(Icons.person_pin_outlined, 'Registered by', guest.createdByName ?? 'Self'),
+                    _buildRow(Icons.calendar_month_outlined, 'Member Since', guest.createdAt != null ? DateFormat('MMM dd, yyyy').format(guest.createdAt!) : 'N/A'),
+                  ]),
+                  const SizedBox(height: 12),
+                  _buildSection('Quick Actions', [
+                    _buildMenuItem(Icons.star_outline, 'Leave a Review', () => context.push('/feedback')),
                     _buildMenuItem(Icons.info_outline, 'Hotel Information', () => context.push('/hotel-info')),
                     if (reservationState.hasActiveReservation)
                       _buildMenuItem(Icons.calendar_month, 'My Reservations', () => context.push('/reservations')),
+                    _buildMenuItem(Icons.settings_outlined, 'Settings', () => context.push('/settings')),
                   ]),
                   const SizedBox(height: 12),
                   _buildSection('Preferences', [
                     SwitchListTile(
-                      title: const Text('Dark Mode'),
-                      secondary: const Icon(Icons.dark_mode_outlined),
+                      title: const Text('Dark Mode', style: TextStyle(fontSize: 15)),
+                      secondary: const Icon(Icons.dark_mode_outlined, color: AppColors.darkNavy),
                       value: themeMode == ThemeMode.dark,
                       onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    _buildMenuItem(Icons.language_outlined, 'Language', () {}),
                   ]),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -279,19 +294,79 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildStatusBadge(dynamic guest) {
+    final isVip = guest.vip == true;
+    final status = guest.status?.toString().toUpperCase() ?? 'RESERVED';
+    Color statusColor;
+    switch (status) {
+      case 'CHECKED_IN':
+        statusColor = AppColors.statusConfirmed;
+      case 'CHECKED_OUT':
+        statusColor = AppColors.textTertiary;
+      default:
+        statusColor = AppColors.statusPending;
+    }
+
+    return Row(
+      children: [
+        if (isVip)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.goldAccent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.star, size: 14, color: AppColors.goldAccent),
+                const SizedBox(width: 4),
+                Text('VIP', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.goldAccent)),
+              ],
+            ),
+          ),
+        if (isVip) const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            status.replaceAll('_', ' '),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
+          ),
+        ),
+        const Spacer(),
+        if (guest.notes != null && guest.notes!.isNotEmpty)
+          Flexible(
+            child: Text(
+              guest.notes!,
+              style: TextStyle(fontSize: 12, color: Colors.grey[500], fontStyle: FontStyle.italic),
+              textAlign: TextAlign.end,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildSection(String title, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textTertiary)),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 0.3)),
           ),
           ...children,
         ],
@@ -299,19 +374,30 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String label, String value) {
+  Widget _buildRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: AppColors.oceanBlue),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.darkNavy.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.darkNavy),
+          ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w500)),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+              ],
+            ),
           ),
         ],
       ),
@@ -320,9 +406,16 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildMenuItem(IconData icon, String label, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.oceanBlue),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.darkNavy.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 18, color: AppColors.darkNavy),
+      ),
       title: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+      trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );

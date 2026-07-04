@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/reservation_provider.dart';
@@ -21,7 +22,8 @@ class ReservationGate extends ConsumerWidget {
     this.lockedTitle = 'Feature Locked',
     this.lockedMessage = 'Please make a reservation to unlock this feature.',
     this.checkInLockedTitle = 'Available After Check-In',
-    this.checkInLockedMessage = 'This feature will automatically unlock after you check in at the hotel.',
+    this.checkInLockedMessage =
+        'This feature will automatically unlock after you check in at the hotel.',
   });
 
   @override
@@ -50,13 +52,12 @@ class ReservationGate extends ConsumerWidget {
       return Stack(
         children: [
           child,
-          AbsorbPointer(
-            child: LockOverlay(
-              title: 'No Reservation',
-              message: 'You currently have no reservation.\nBook a room to unlock hotel services.',
-              actionLabel: 'Book a Room',
-              onAction: () {},
-            ),
+          LockOverlay(
+            title: 'No Reservation',
+            message:
+                'You currently have no reservation.\nBook a room to unlock hotel services.',
+            actionLabel: 'Book a Room',
+            onAction: () => context.push('/rooms'),
           ),
         ],
       );

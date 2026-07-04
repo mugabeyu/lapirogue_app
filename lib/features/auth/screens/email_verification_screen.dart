@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/reservation_provider.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
@@ -41,16 +42,6 @@ class _EmailVerificationScreenState
   void initState() {
     super.initState();
     _startTimer();
-    _triggerReauthForReservation();
-  }
-
-  Future<void> _triggerReauthForReservation() async {
-    if (!_isReservationVerification) return;
-    try {
-      await Supabase.instance.client.auth.reauthenticate();
-    } catch (_) {
-      // OTP may take a moment; user can tap "Resend code" if needed
-    }
   }
 
   @override
@@ -97,7 +88,6 @@ class _EmailVerificationScreenState
 
     try {
       if (_isReservationVerification) {
-        // Verify OTP via backend (which uses Supabase Admin with service_role key)
         final baseUrl = await AuthService().baseUrl;
         final response = await http.post(
           Uri.parse('$baseUrl/api/reservations/verify-otp'),
@@ -110,25 +100,37 @@ class _EmailVerificationScreenState
         );
         final payload = jsonDecode(response.body) as Map<String, dynamic>;
         if (response.statusCode >= 400 || payload['success'] != true) {
-          throw Exception(payload['error'] ?? 'Reservation confirmation failed');
+          throw Exception(
+            payload['error'] ?? 'Reservation confirmation failed',
+          );
         }
         await ref.read(reservationProvider.notifier).refresh();
-      } else {
-        await Supabase.instance.client.auth.verifyOTP(
-          email: widget.email,
-          token: _otpCode,
-          type: OtpType.signup,
+
+        if (!mounted) return;
+        _timer?.cancel();
+        final data = payload['data'] as Map<String, dynamic>?;
+        context.pushReplacement(
+          '/booking-confirmation',
+          extra: {
+            'reservationId': data?['reservationId'] as String? ?? '',
+            'checkIn': data?['checkIn'] as String? ?? '',
+            'checkOut': data?['checkOut'] as String? ?? '',
+          },
         );
+        return;
       }
+
+      await Supabase.instance.client.auth.verifyOTP(
+        email: widget.email,
+        token: _otpCode,
+        type: OtpType.signup,
+      );
+      await ref.read(authStateProvider.notifier).refreshGuest();
+      await ref.read(reservationProvider.notifier).refresh();
 
       if (!mounted) return;
-
       _timer?.cancel();
-      if (_isReservationVerification) {
-        context.go('/reservations');
-      } else {
-        context.pushReplacement('/onboarding');
-      }
+      context.go('/');
     } catch (e) {
       _showSnack(
         e.toString().contains('Invalid')
@@ -146,7 +148,19 @@ class _EmailVerificationScreenState
 
     try {
       if (_isReservationVerification) {
-        await Supabase.instance.client.auth.reauthenticate();
+        final baseUrl = await AuthService().baseUrl;
+        final response = await http.post(
+          Uri.parse('$baseUrl/api/reservations/resend-otp'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': widget.email,
+            'token': widget.verificationId,
+          }),
+        );
+        final payload = jsonDecode(response.body) as Map<String, dynamic>;
+        if (response.statusCode >= 400 || payload['success'] != true) {
+          throw Exception(payload['error'] ?? 'Failed to resend code');
+        }
       } else {
         await Supabase.instance.client.auth.resend(
           email: widget.email,
@@ -179,7 +193,7 @@ class _EmailVerificationScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Verify Email'),
-        backgroundColor: AppColors.oceanBlue,
+        backgroundColor: AppColors.darkNavy,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -232,14 +246,17 @@ class _EmailVerificationScreenState
                       focusNode: _focusNodes[index],
                       textAlign: TextAlign.center,
                       keyboardType: TextInputType.text,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(1)],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(1),
+                      ],
                       autofocus: index == 0,
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
                         color: Colors.black,
                       ),
-                      cursorColor: AppColors.oceanBlue,
+                      cursorColor: AppColors.darkNavy,
                       textAlignVertical: TextAlignVertical.center,
                       decoration: InputDecoration(
                         counterText: '',
@@ -252,7 +269,7 @@ class _EmailVerificationScreenState
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                            color: AppColors.oceanBlue,
+                            color: AppColors.darkNavy,
                             width: 2,
                           ),
                         ),
@@ -327,7 +344,7 @@ class _EmailVerificationScreenState
                       style: TextStyle(
                         color: _secondsRemaining > 0
                             ? Colors.grey
-                            : AppColors.oceanBlue,
+                            : AppColors.darkNavy,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

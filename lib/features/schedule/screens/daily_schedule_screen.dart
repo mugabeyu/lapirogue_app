@@ -18,7 +18,8 @@ class DailyScheduleScreen extends ConsumerStatefulWidget {
   const DailyScheduleScreen({super.key});
 
   @override
-  ConsumerState<DailyScheduleScreen> createState() => _DailyScheduleScreenState();
+  ConsumerState<DailyScheduleScreen> createState() =>
+      _DailyScheduleScreenState();
 }
 
 class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
@@ -64,6 +65,17 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
     final guest = await GuestService().getCurrentGuest();
     if (guest == null) return;
 
+    if (!ref.read(reservationProvider).isCheckedIn) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You can complete schedule items after check-in.'),
+          ),
+        );
+      }
+      return;
+    }
+
     if (item.status.toUpperCase() == 'COMPLETED') {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -77,9 +89,14 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Mark as Completed'),
-        content: Text('Have you completed "${item.title}"? You will earn eco-points!'),
+        content: Text(
+          'Have you completed "${item.title}"? You will earn eco-points!',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Yes, Complete!'),
@@ -90,7 +107,10 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
 
     if (confirmed != true) return;
 
-    final scheduleSuccess = await ScheduleService().markItemCompleted(item.id, sourceModule: item.sourceModule);
+    final scheduleSuccess = await ScheduleService().markItemCompleted(
+      item.id,
+      sourceModule: item.sourceModule,
+    );
 
     bool pointsAwarded = false;
     if (scheduleSuccess) {
@@ -98,6 +118,8 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
         guestId: guest.id,
         points: 25,
         description: 'Completed scheduled activity: ${item.title}',
+        sourceType: 'SCHEDULE',
+        sourceRecordId: item.id,
       );
     }
 
@@ -127,11 +149,15 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
         _showEcoPointsAnimation();
       } else if (scheduleSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Activity marked but failed to award eco-points')),
+          const SnackBar(
+            content: Text('Activity marked but failed to award eco-points'),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Item already completed or failed to update')),
+          const SnackBar(
+            content: Text('Item already completed or failed to update'),
+          ),
         );
       }
     }
@@ -199,52 +225,11 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
-    final reservationState = ref.watch(reservationProvider);
 
     if (!authState.isAuthenticated) {
       return Scaffold(
         appBar: AppBar(title: const Text('Daily Schedule')),
         body: const Center(child: Text('Sign in to view your schedule')),
-      );
-    }
-
-    if (reservationState.isReserved) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Daily Schedule'),
-          backgroundColor: AppTheme.primary,
-          foregroundColor: Colors.white,
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 80, height: 80,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.lock_outline, size: 40, color: AppTheme.primary),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Your Personalized Itinerary',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Your personalized itinerary will become available after hotel check-in.',
-                  style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
       );
     }
 
@@ -277,7 +262,9 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                         icon: const Icon(Icons.chevron_left),
                         onPressed: () {
                           setState(() {
-                            _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                            _selectedDate = _selectedDate.subtract(
+                              const Duration(days: 1),
+                            );
                           });
                         },
                       ),
@@ -304,7 +291,9 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                         icon: const Icon(Icons.chevron_right),
                         onPressed: () {
                           setState(() {
-                            _selectedDate = _selectedDate.add(const Duration(days: 1));
+                            _selectedDate = _selectedDate.add(
+                              const Duration(days: 1),
+                            );
                           });
                         },
                       ),
@@ -320,7 +309,9 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                               Icon(
                                 Icons.event_available,
                                 size: 64,
-                                color: AppTheme.textTertiary.withValues(alpha: 0.5),
+                                color: AppTheme.textTertiary.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -355,13 +346,13 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
     final location = item.location ?? '';
     final status = item.status;
     final isCompleted = status.toUpperCase() == 'COMPLETED';
+    final canComplete = ref.watch(reservationProvider).isCheckedIn;
+    final isFinished = DateTime.now().isAfter(endAt);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: IntrinsicHeight(
         child: Row(
           children: [
@@ -385,7 +376,9 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: isCompleted ? AppTheme.accentGreen : AppTheme.primary,
+                      color: isCompleted
+                          ? AppTheme.accentGreen
+                          : AppTheme.primary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -413,8 +406,12 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: isCompleted ? AppTheme.textSecondary : AppTheme.textPrimary,
-                              decoration: isCompleted ? TextDecoration.lineThrough : null,
+                              color: isCompleted
+                                  ? AppTheme.textSecondary
+                                  : AppTheme.textPrimary,
+                              decoration: isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
                             ),
                           ),
                         ),
@@ -457,7 +454,11 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.check_circle, size: 16, color: AppTheme.accentGreen),
+                          Icon(
+                            Icons.check_circle,
+                            size: 16,
+                            color: AppTheme.accentGreen,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Marked as Completed',
@@ -469,7 +470,9 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                           ),
                         ],
                       ),
-                    ] else if (DateTime.now().isAfter(endAt.add(const Duration(minutes: 5))) && item.sourceModule != 'reservations') ...[
+                    ] else if (canComplete &&
+                        isFinished &&
+                        item.sourceModule != 'reservations') ...[
                       const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
@@ -482,17 +485,16 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                           ),
                         ),
                       ),
-                    ] else if (DateTime.now().isAfter(endAt) && item.sourceModule != 'reservations') ...[
+                    ] else if (!canComplete &&
+                        isFinished &&
+                        item.sourceModule != 'reservations') ...[
                       const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _markCompleted(item),
-                          icon: const Icon(Icons.check_circle, size: 18),
-                          label: const Text('Mark as Completed'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accentGreen,
-                          ),
+                        child: OutlinedButton.icon(
+                          onPressed: null,
+                          icon: const Icon(Icons.lock_outline, size: 18),
+                          label: const Text('Complete after check-in'),
                         ),
                       ),
                     ],

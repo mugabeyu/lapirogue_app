@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/screens/home_screen.dart';
+import '../../features/mystay/screens/my_stay_screen.dart';
 import '../../features/reservations/screens/reservations_screen.dart';
+import '../../features/reservations/screens/booking_confirmation_screen.dart';
+import '../../features/booking/screens/booking_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/rooms/screens/room_detail_screen.dart';
@@ -14,6 +17,7 @@ import '../../features/spa/screens/spa_screen.dart';
 import '../../features/gallery/screens/gallery_screen.dart';
 import '../../features/room_service/screens/room_service_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
+import '../../features/orders/screens/orders_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/email_verification_screen.dart';
@@ -32,14 +36,10 @@ import '../../features/profile/screens/contact_support_screen.dart';
 import '../../data/providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _shellNavigatorKey = GlobalKey<NavigatorState>();
-
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
-  return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+  final router = GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: false,
     redirect: (context, state) {
@@ -68,7 +68,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       ShellRoute(
-        navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) => MainShell(child: child),
         routes: [
           GoRoute(
@@ -77,9 +76,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
-            path: '/reservations',
+            path: '/my-stay',
             pageBuilder: (context, state) =>
-                const NoTransitionPage(child: ReservationsScreen()),
+                const NoTransitionPage(child: MyStayScreen()),
           ),
           GoRoute(
             path: '/messages',
@@ -94,18 +93,45 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
+        path: '/reservations',
+        builder: (context, state) => const ReservationsScreen(),
+      ),
+      GoRoute(
+        path: '/booking-confirmation',
+        
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return BookingConfirmationScreen(
+            reservationId: extra?['reservationId'] as String? ?? '',
+            checkIn: extra?['checkIn'] as String? ?? '',
+            checkOut: extra?['checkOut'] as String? ?? '',
+          );
+        },
+      ),
+      GoRoute(
+        path: '/booking',
+        
+        builder: (context, state) {
+          final item = state.extra as BookingItem?;
+          if (item == null) {
+            return const Scaffold(body: Center(child: Text('No booking data')));
+          }
+          return BookingScreen(item: item);
+        },
+      ),
+      GoRoute(
         path: '/login',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/register',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/email-verification',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return EmailVerificationScreen(
@@ -117,102 +143,110 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/onboarding',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/forgot-password',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
       GoRoute(
         path: '/rooms',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const RoomsListScreen(),
       ),
       GoRoute(
         path: '/rooms/:id',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) =>
             RoomDetailScreen(roomId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/dining',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const DiningScreen(),
       ),
       GoRoute(
+        path: '/orders',
+        
+        builder: (context, state) => const OrdersScreen(),
+      ),
+      GoRoute(
         path: '/activities',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const ActivitiesScreen(),
       ),
       GoRoute(
         path: '/spa',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const SpaScreen(),
       ),
       GoRoute(
         path: '/gallery',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const GalleryScreen(),
       ),
       GoRoute(
         path: '/room-service',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const RoomServiceScreen(),
       ),
       GoRoute(
         path: '/notifications',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
         path: '/feedback',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const FeedbackScreen(),
       ),
       GoRoute(
         path: '/hotel-info',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const HotelInfoScreen(),
       ),
       GoRoute(
         path: '/daily-schedule',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const DailyScheduleScreen(),
       ),
       GoRoute(
         path: '/payments',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const PaymentsScreen(),
       ),
       GoRoute(
         path: '/payment-methods',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const PaymentMethodsScreen(),
       ),
       GoRoute(
         path: '/settings',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/privacy',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const PrivacyScreen(),
       ),
       GoRoute(
         path: '/help',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const HelpScreen(),
       ),
       GoRoute(
         path: '/contact-support',
-        parentNavigatorKey: _rootNavigatorKey,
+        
         builder: (context, state) => const ContactSupportScreen(),
       ),
     ],
   );
+
+  ref.onDispose(() => router.dispose());
+  return router;
 });
 
 class MainShell extends ConsumerWidget {
@@ -224,7 +258,7 @@ class MainShell extends ConsumerWidget {
     final location = GoRouterState.of(context).matchedLocation;
 
     int currentIndex = 0;
-    if (location == '/reservations') currentIndex = 1;
+    if (location == '/my-stay') currentIndex = 1;
     if (location == '/messages') currentIndex = 2;
     if (location == '/profile') currentIndex = 3;
 
@@ -232,20 +266,20 @@ class MainShell extends ConsumerWidget {
       body: child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
+          color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, -3),
             ),
           ],
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
               child: Theme(
                 data: Theme.of(context).copyWith(
                   splashColor: Colors.transparent,
@@ -258,17 +292,17 @@ class MainShell extends ConsumerWidget {
                       case 0:
                         context.go('/');
                       case 1:
-                        context.go('/reservations');
+                        context.go('/my-stay');
                       case 2:
                         context.go('/messages');
                       case 3:
                         context.go('/profile');
                     }
                   },
-                  backgroundColor: Colors.transparent,
+                  backgroundColor: AppColors.surfaceLight,
                   elevation: 0,
                   type: BottomNavigationBarType.fixed,
-                  selectedItemColor: AppColors.oceanBlue,
+                  selectedItemColor: AppColors.darkNavy,
                   unselectedItemColor: AppColors.textTertiary,
                   selectedFontSize: 11,
                   unselectedFontSize: 11,
@@ -282,9 +316,9 @@ class MainShell extends ConsumerWidget {
                       label: 'Home',
                     ),
                     BottomNavigationBarItem(
-                      icon: Icon(Icons.calendar_month_outlined),
-                      activeIcon: Icon(Icons.calendar_month),
-                      label: 'Reservations',
+                      icon: Icon(Icons.villa_outlined),
+                      activeIcon: Icon(Icons.villa),
+                      label: 'My Stay',
                     ),
                     BottomNavigationBarItem(
                       icon: Icon(Icons.chat_outlined),

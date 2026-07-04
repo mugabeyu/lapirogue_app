@@ -16,12 +16,48 @@ class RoomsListScreen extends ConsumerStatefulWidget {
   ConsumerState<RoomsListScreen> createState() => _RoomsListScreenState();
 }
 
+enum _SortOrder { priceLowToHigh, priceHighToLow, defaultOrder }
+
 class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
   DateTime _checkIn = DateTime.now().add(const Duration(days: 1));
   DateTime _checkOut = DateTime.now().add(const Duration(days: 2));
   List<Room> _availableRooms = [];
-  bool _isLoadingRooms = false;
-  bool _hasSearched = false;
+  bool _isLoadingRooms = true;
+  bool _hasSearched = true;
+  _SortOrder _sortOrder = _SortOrder.priceLowToHigh;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAllAvailableRooms();
+  }
+
+  Future<void> _loadAllAvailableRooms() async {
+    try {
+      final allRooms = await ref.read(allRoomsProvider.future);
+      if (mounted) {
+        setState(() {
+          _availableRooms = allRooms.where((r) => r.status == 'AVAILABLE').toList();
+          _isLoadingRooms = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingRooms = false);
+    }
+  }
+
+  List<Room> get _sortedRooms {
+    final sorted = List<Room>.from(_availableRooms);
+    switch (_sortOrder) {
+      case _SortOrder.priceLowToHigh:
+        sorted.sort((a, b) => a.price.compareTo(b.price));
+      case _SortOrder.priceHighToLow:
+        sorted.sort((a, b) => b.price.compareTo(a.price));
+      case _SortOrder.defaultOrder:
+        break;
+    }
+    return sorted;
+  }
 
   Future<void> _pickDate(bool isCheckIn) async {
     final initial = isCheckIn ? _checkIn : _checkOut;
@@ -33,7 +69,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.light(primary: AppColors.oceanBlue, onPrimary: Colors.white, surface: Colors.white),
+          colorScheme: ColorScheme.light(primary: AppColors.darkNavy, onPrimary: Colors.white, surface: Colors.white),
         ),
         child: child!,
       ),
@@ -83,7 +119,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Book a Room'),
-        backgroundColor: AppColors.oceanBlue,
+        backgroundColor: AppColors.darkNavy,
         foregroundColor: Colors.white,
       ),
       body: Column(
@@ -156,7 +192,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.calendar_today, size: 14, color: AppColors.oceanBlue),
+                Icon(Icons.calendar_today, size: 14, color: AppColors.darkNavy),
                 const SizedBox(width: 6),
                 Text(
                   DateFormat('MMM dd').format(date),
@@ -205,15 +241,50 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _availableRooms.length,
-      itemBuilder: (context, index) {
-        final room = _availableRooms[index];
-        final nights = _checkOut.difference(_checkIn).inDays;
-        final totalPrice = room.price * nights;
-        return _buildRoomCard(context, room, nights, totalPrice);
-      },
+    return Column(
+      children: [
+        _buildSortSelector(),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            itemCount: _sortedRooms.length,
+            itemBuilder: (context, index) {
+              final room = _sortedRooms[index];
+              final nights = _checkOut.difference(_checkIn).inDays;
+              final totalPrice = room.price * nights;
+              return _buildRoomCard(context, room, nights, totalPrice);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSortSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(Icons.sort, size: 16, color: Colors.grey[500]),
+          const SizedBox(width: 6),
+          Text('Sort by', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          const SizedBox(width: 8),
+          DropdownButton<_SortOrder>(
+            value: _sortOrder,
+            isDense: true,
+            underline: const SizedBox(),
+            style: TextStyle(fontSize: 13, color: AppColors.darkNavy, fontWeight: FontWeight.w500),
+            items: const [
+              DropdownMenuItem(value: _SortOrder.priceLowToHigh, child: Text('Price (Low to High)')),
+              DropdownMenuItem(value: _SortOrder.priceHighToLow, child: Text('Price (High to Low)')),
+              DropdownMenuItem(value: _SortOrder.defaultOrder, child: Text('Default Order')),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => _sortOrder = value);
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -266,7 +337,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('MUR ${NumberFormat('#,###').format(room.price.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.oceanBlue)),
+                          Text('MUR ${NumberFormat('#,###').format(room.price.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.darkNavy)),
                           Text('per night', style: TextStyle(fontSize: 10, color: Colors.grey[500])),
                         ],
                       ),
@@ -294,14 +365,14 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.oceanBlue.withValues(alpha: 0.05),
+                      color: AppColors.darkNavy.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('$nights nights', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                        Text('MUR ${NumberFormat('#,###').format(totalPrice.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.oceanBlue)),
+                        Text('MUR ${NumberFormat('#,###').format(totalPrice.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.darkNavy)),
                       ],
                     ),
                   ),

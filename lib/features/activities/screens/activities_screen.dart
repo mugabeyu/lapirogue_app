@@ -1,18 +1,15 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../core/services/auth_service.dart';
-import '../../../core/services/session_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/reservation_gate.dart';
 import '../../../core/models/activity.dart';
 import '../../../data/providers/reservation_provider.dart';
+import '../../booking/screens/booking_screen.dart';
 
 class ActivitiesScreen extends ConsumerStatefulWidget {
   const ActivitiesScreen({super.key});
@@ -79,65 +76,8 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
     return grouped;
   }
 
-  DateTime _dateOnly(DateTime value) =>
-      DateTime(value.year, value.month, value.day);
-
-  DateTime _initialBookingDate(ReservationState reservationState) {
-    final reservation = reservationState.activeReservation;
-    final today = _dateOnly(DateTime.now());
-    if (reservation == null) return today;
-    final checkIn = _dateOnly(reservation.checkIn);
-    return checkIn.isAfter(today) ? checkIn : today;
-  }
-
-  DateTime _lastBookingDate(ReservationState reservationState) {
-    final reservation = reservationState.activeReservation;
-    if (reservation == null) {
-      return _dateOnly(DateTime.now().add(const Duration(days: 30)));
-    }
-    final last = _dateOnly(
-      reservation.checkOut.subtract(const Duration(days: 1)),
-    );
-    final initial = _initialBookingDate(reservationState);
-    return last.isBefore(initial) ? initial : last;
-  }
-
-  Future<void> _submitBooking(
-    Activity activity,
-    ReservationState reservationState,
-    DateTime bookingDate,
-    int participants,
-  ) async {
-    final guest = await SessionService.getCurrentGuest();
-    if (guest == null) {
-      throw Exception('Please sign in to book activities.');
-    }
-
-    final baseUrl = await AuthService().baseUrl;
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/activities/book'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'activityId': activity.id,
-        'guestId': guest['id'].toString(),
-        'date': _dateOnly(bookingDate).toIso8601String().split('T').first,
-        'timeSlot': activity.defaultTime ?? '09:00',
-        'participants': participants,
-        'status': 'CONFIRMED',
-        'origin': 'MOBILE_APP',
-      }),
-    );
-
-    if (response.statusCode >= 400) {
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(payload['error'] ?? 'Unable to book activity');
-    }
-  }
-
-  Future<void> _showBookingSheet(
-    Activity activity,
-    ReservationState reservationState,
-  ) async {
+  Future<void> _bookActivity(Activity activity) async {
+    final reservationState = ref.read(reservationProvider);
     if (!reservationState.hasActiveReservation) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -147,183 +87,25 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
       return;
     }
 
-    var selectedDate = _initialBookingDate(reservationState);
-    final firstDate = selectedDate;
-    final lastDate = _lastBookingDate(reservationState);
-    var participants = 1;
-    var isSubmitting = false;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 44,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.lightGray2,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(activity.name, style: AppTypography.sectionHeader),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Choose the day and number of guests for this experience.',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(
-                        Icons.event_available,
-                        color: AppColors.oceanBlue,
-                      ),
-                      title: const Text('Booking date'),
-                      subtitle: Text(
-                        MaterialLocalizations.of(
-                          context,
-                        ).formatMediumDate(selectedDate),
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: firstDate,
-                          lastDate: lastDate,
-                        );
-                        if (picked != null) {
-                          setSheetState(() => selectedDate = _dateOnly(picked));
-                        }
-                      },
-                    ),
-                    const Divider(height: 24),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.group_outlined,
-                          color: AppColors.oceanBlue,
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'Participants',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: participants > 1
-                              ? () => setSheetState(() => participants -= 1)
-                              : null,
-                          icon: const Icon(Icons.remove_circle_outline),
-                        ),
-                        Text('$participants', style: AppTypography.bodyBold),
-                        IconButton(
-                          onPressed: participants < activity.capacity
-                              ? () => setSheetState(() => participants += 1)
-                              : null,
-                          icon: const Icon(Icons.add_circle_outline),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: isSubmitting
-                            ? null
-                            : () async {
-                                setSheetState(() => isSubmitting = true);
-                                try {
-                                  await _submitBooking(
-                                    activity,
-                                    reservationState,
-                                    selectedDate,
-                                    participants,
-                                  );
-                                  if (!mounted) return;
-                                  Navigator.of(this.context).pop();
-                                  ScaffoldMessenger.of(
-                                    this.context,
-                                  ).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '${activity.name} booked for ${MaterialLocalizations.of(this.context).formatMediumDate(selectedDate)}.',
-                                      ),
-                                      backgroundColor:
-                                          AppColors.statusConfirmed,
-                                    ),
-                                  );
-                                } catch (error) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(
-                                      this.context,
-                                    ).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          error.toString().replaceFirst(
-                                            'Exception: ',
-                                            '',
-                                          ),
-                                        ),
-                                        backgroundColor:
-                                            AppColors.statusCancelled,
-                                      ),
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted) {
-                                    setSheetState(() => isSubmitting = false);
-                                  }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.oceanBlue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        child: Text(
-                          isSubmitting ? 'Booking...' : 'Book activity',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+    if (!mounted) return;
+    context.push(
+      '/booking',
+      extra: BookingItem(
+        type: BookingType.activity,
+        id: activity.id,
+        name: activity.name,
+        imagePath: activity.imagePath,
+        price: activity.price,
+        category: activity.category,
+        description: activity.description,
+        duration: activity.duration,
+        capacity: activity.capacity,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final reservationState = ref.watch(reservationProvider);
-
     return ReservationGate(
       requiresCheckIn: false,
       checkInLockedTitle: 'Activities Available After Check-In',
@@ -334,7 +116,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
         appBar: AppBar(
           title: const Text('Activities & Tours'),
           backgroundColor: AppColors.surfaceLight,
-          foregroundColor: AppColors.oceanBlue,
+          foregroundColor: AppColors.darkNavy,
           elevation: 0,
         ),
         body: _isLoading
@@ -354,8 +136,8 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                             borderRadius: BorderRadius.circular(28),
                             gradient: const LinearGradient(
                               colors: [
-                                AppColors.oceanBlue,
-                                AppColors.oceanBlueLight,
+                                AppColors.darkNavy,
+                                AppColors.darkNavyLight,
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -366,7 +148,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                             children: [
                               Text(
                                 'Curated island experiences',
-                                style: AppTypography.sectionHeader.copyWith(
+                                style: AppTypography.sectionTitle.copyWith(
                                   color: Colors.white,
                                 ),
                               ),
@@ -417,14 +199,14 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                               labelStyle: TextStyle(
                                 color: selected
                                     ? Colors.white
-                                    : AppColors.oceanBlue,
+                                    : AppColors.darkNavy,
                                 fontWeight: FontWeight.w600,
                               ),
                               backgroundColor: Colors.white,
-                              selectedColor: AppColors.oceanBlue,
+                              selectedColor: AppColors.darkNavy,
                               side: BorderSide(
                                 color: selected
-                                    ? AppColors.oceanBlue
+                                    ? AppColors.darkNavy
                                     : AppColors.lightGray2,
                               ),
                               shape: RoundedRectangleBorder(
@@ -446,7 +228,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                             children: [
                               Text(
                                 entry.key,
-                                style: AppTypography.sectionHeaderSmall
+                                style: AppTypography.cardTitle
                                     .copyWith(color: AppColors.textPrimary),
                               ),
                               const SizedBox(height: 6),
@@ -462,10 +244,7 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                                   padding: const EdgeInsets.only(bottom: 16),
                                   child: _ActivityCard(
                                     activity: activity,
-                                    onBook: () => _showBookingSheet(
-                                      activity,
-                                      reservationState,
-                                    ),
+                                    onBook: () => _bookActivity(activity),
                                     icon: _categoryIcon(activity.category),
                                   ),
                                 ),
@@ -560,7 +339,7 @@ class _ActivityCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         activity.name,
-                        style: AppTypography.sectionHeaderSmall.copyWith(
+                        style: AppTypography.cardTitle.copyWith(
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -569,7 +348,7 @@ class _ActivityCard extends StatelessWidget {
                     Text(
                       'MUR ${activity.price.toStringAsFixed(0)}',
                       style: AppTypography.priceSmall.copyWith(
-                        color: AppColors.oceanBlue,
+                        color: AppColors.darkNavy,
                       ),
                     ),
                   ],
@@ -613,7 +392,7 @@ class _ActivityCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onBook,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.oceanBlue,
+                      backgroundColor: AppColors.darkNavy,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
@@ -642,7 +421,7 @@ class _ActivityFallback extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.sandBeige, AppColors.lightGray],
+          colors: [AppColors.goldAccentLight, AppColors.lightGray],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -651,7 +430,7 @@ class _ActivityFallback extends StatelessWidget {
         child: Icon(
           icon,
           size: 56,
-          color: AppColors.oceanBlue.withValues(alpha: 0.55),
+          color: AppColors.darkNavy.withValues(alpha: 0.55),
         ),
       ),
     );
@@ -675,11 +454,11 @@ class _MetaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: AppColors.oceanBlue),
+          Icon(icon, size: 15, color: AppColors.darkNavy),
           const SizedBox(width: 6),
           Text(
             label,
-            style: AppTypography.captionSmallBold.copyWith(
+            style: AppTypography.captionMedium.copyWith(
               color: AppColors.textPrimary,
             ),
           ),
@@ -716,7 +495,7 @@ class _StatPill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: AppTypography.captionSmallBold.copyWith(color: color),
+            style: AppTypography.captionMedium.copyWith(color: color),
           ),
         ],
       ),

@@ -1,14 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/reservation_gate.dart';
+import '../../../core/models/activity.dart';
+import '../../booking/screens/booking_screen.dart';
 
-class SpaScreen extends ConsumerWidget {
+class SpaScreen extends ConsumerStatefulWidget {
   const SpaScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SpaScreen> createState() => _SpaScreenState();
+}
+
+class _SpaScreenState extends ConsumerState<SpaScreen> {
+  List<Activity> _treatments = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTreatments();
+  }
+
+  Future<void> _loadTreatments() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('activities')
+          .select('*')
+          .eq('status', 'ACTIVE')
+          .order('name');
+
+      if (mounted) {
+        setState(() {
+          _treatments = (response as List)
+              .map((e) => Activity.fromJson(e))
+              .where((a) =>
+                  a.category.toUpperCase() == 'SPA' ||
+                  a.category.toUpperCase() == 'RELAXATION')
+              .toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _bookTreatment(Activity treatment) async {
+    if (!mounted) return;
+    context.push(
+      '/booking',
+      extra: BookingItem(
+        type: BookingType.spa,
+        id: treatment.id,
+        name: treatment.name,
+        imagePath: treatment.imagePath,
+        price: treatment.price,
+        category: treatment.category,
+        description: treatment.description,
+        duration: treatment.duration,
+        capacity: treatment.capacity,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ReservationGate(
       requiresCheckIn: true,
       checkInLockedTitle: 'Spa Available After Check-In',
@@ -17,195 +79,244 @@ class SpaScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Spa & Wellness'),
-          backgroundColor: AppColors.oceanBlue,
+          backgroundColor: AppColors.darkNavy,
           foregroundColor: Colors.white,
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF9C27B0).withValues(alpha: 0.6),
-                      const Color(0xFF7B1FA2),
-                    ],
-                  ),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.spa, color: Colors.white, size: 56),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Serenity Spa',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Find your inner peace',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Our Treatments',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              _buildTreatmentCard(
-                'Moroccan Hammam',
-                '60 min',
-                'MUR 2,500',
-                Icons.water_drop,
-              ),
-              _buildTreatmentCard(
-                'Deep Tissue Massage',
-                '90 min',
-                'MUR 3,200',
-                Icons.self_improvement,
-              ),
-              _buildTreatmentCard(
-                'Facial Rejuvenation',
-                '60 min',
-                'MUR 2,800',
-                Icons.face,
-              ),
-              _buildTreatmentCard(
-                'Aromatherapy',
-                '60 min',
-                'MUR 2,200',
-                Icons.air,
-              ),
-              _buildTreatmentCard(
-                'Hot Stone Therapy',
-                '90 min',
-                'MUR 3,500',
-                Icons.whatshot,
-              ),
-              _buildTreatmentCard(
-                'Couples Massage',
-                '90 min',
-                'MUR 5,800',
-                Icons.favorite,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Facilities',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    [
-                          'Steam Room',
-                          'Sauna',
-                          'Jacuzzi',
-                          'Ice Fountain',
-                          'Relaxation Lounge',
-                          'Yoga Studio',
-                          'Meditation Garden',
-                        ]
-                        .map(
-                          (f) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 8,
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadTreatments,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 200,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    const Color(0xFF9C27B0).withValues(alpha: 0.6),
+                                    const Color(0xFF7B1FA2),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: Text(
-                              f,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.spa, color: Colors.white, size: 56),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Serenity Spa',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Find your inner peace',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        )
-                        .toList(),
+                            const SizedBox(height: 24),
+                            Text(
+                              'Our Treatments',
+                              style: AppTypography.sectionTitle,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${_treatments.length} ${_treatments.length == 1 ? 'treatment' : 'treatments'} available',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            if (_treatments.isEmpty)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: AppColors.lightGray,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Text(
+                                  'No spa treatments available at this time.',
+                                  textAlign: TextAlign.center,
+                                ),
+                              )
+                            else
+                              ..._treatments.map(
+                                (treatment) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _buildTreatmentCard(treatment),
+                                ),
+                              ),
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Facilities',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                'Steam Room', 'Sauna', 'Jacuzzi',
+                                'Ice Fountain', 'Relaxation Lounge',
+                                'Yoga Studio', 'Meditation Garden',
+                              ].map(
+                                (f) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.04),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    f,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ).toList(),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  Widget _buildTreatmentCard(
-    String name,
-    String duration,
-    String price,
-    IconData icon,
-  ) {
+  Widget _buildTreatmentCard(Activity treatment) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFF9C27B0).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            child: SizedBox(
+              height: 180,
+              width: double.infinity,
+              child: treatment.imagePath != null && treatment.imagePath!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: treatment.imagePath!,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) => Container(
+                        color: AppColors.lightGray,
+                        child: const Icon(Icons.spa, size: 56, color: AppColors.darkNavy),
+                      ),
+                      placeholder: (_, _) => Container(color: AppColors.lightGray),
+                    )
+                  : Container(
+                      color: AppColors.lightGray,
+                      child: const Icon(Icons.spa, size: 56, color: AppColors.darkNavy),
+                    ),
             ),
-            child: Icon(icon, color: const Color(0xFF9C27B0), size: 24),
           ),
-          const SizedBox(width: 14),
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        treatment.name,
+                        style: AppTypography.cardTitle,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'MUR ${treatment.price.toStringAsFixed(0)}',
+                      style: AppTypography.priceSmall.copyWith(
+                        color: AppColors.darkNavy,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
                 Text(
-                  duration,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  '${treatment.duration} min',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (treatment.description?.trim().isNotEmpty == true) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    treatment.description!,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _bookTreatment(treatment),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF9C27B0),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: const Text(
+                      'Book Treatment',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ],
-            ),
-          ),
-          Text(
-            price,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              color: AppColors.oceanBlue,
             ),
           ),
         ],
