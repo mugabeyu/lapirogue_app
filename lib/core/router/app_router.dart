@@ -28,7 +28,6 @@ import '../../features/hotel_info/screens/hotel_info_screen.dart';
 import '../../features/schedule/screens/daily_schedule_screen.dart';
 import '../../features/payments/screens/payments_screen.dart';
 import '../../features/profile/screens/payment_methods_screen.dart';
-import '../../features/profile/screens/settings_screen.dart';
 import '../../features/profile/screens/privacy_screen.dart';
 import '../../features/profile/screens/help_screen.dart';
 import '../../features/profile/screens/contact_support_screen.dart';
@@ -221,11 +220,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/payment-methods',
         
         builder: (context, state) => const PaymentMethodsScreen(),
-      ),
-      GoRoute(
-        path: '/settings',
-        
-        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/privacy',

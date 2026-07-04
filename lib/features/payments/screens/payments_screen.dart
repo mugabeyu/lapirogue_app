@@ -298,6 +298,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     final method = payment.method;
     final createdAt = payment.createdAt ?? DateTime.now();
     final paymentId = payment.paymentId;
+    final reference = payment.reference;
     final extraItems = payment.extraItems;
 
     Color statusColor;
@@ -335,6 +336,16 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (reference != null && reference.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Ref: $reference',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Text(
                     DateFormat('MMM d, yyyy • HH:mm').format(createdAt),

@@ -229,7 +229,7 @@ class _EmailVerificationScreenState
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.grey[600],
+                color: AppColors.textSecondary,
                 height: 1.5,
               ),
             ),
@@ -324,7 +324,7 @@ class _EmailVerificationScreenState
             const SizedBox(height: 24),
             Text(
               'Code expires in $_formattedTime',
-              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
             TextButton(
@@ -358,12 +358,12 @@ class _EmailVerificationScreenState
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 20, color: Colors.grey[600]),
+                  Icon(Icons.info_outline, size: 20, color: AppColors.textSecondary),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Please check your inbox and spam folder for the verification code.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
                   ),
                 ],

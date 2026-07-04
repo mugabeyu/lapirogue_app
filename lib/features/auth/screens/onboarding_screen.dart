@@ -83,7 +83,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             children: [
               const Text('Welcome!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
-              Text('Tell us about yourself', style: TextStyle(color: Colors.grey[600])),
+              Text('Tell us about yourself', style: TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: 24),
               Row(
                 children: [

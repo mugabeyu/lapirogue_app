@@ -48,9 +48,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.credit_card_off, size: 64, color: Colors.grey[300]),
+                  const Icon(Icons.credit_card_off, size: 64, color: AppColors.textTertiary),
                   const SizedBox(height: 16),
-                  Text('No payment methods saved', style: TextStyle(color: Colors.grey[500])),
+                  const Text('No payment methods saved', style: TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
             )
@@ -70,7 +70,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       child: Icon(m['type'] == 'Visa' ? Icons.credit_card : Icons.credit_card, color: AppColors.darkNavy),
                     ),
                     title: Text('${m['type']} •••• ${m['last4']}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text('Expires ${m['expiry']}', style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                    subtitle: Text('Expires ${m['expiry']}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline, color: AppColors.statusCancelled),
                       onPressed: () => _deleteMethod(i),

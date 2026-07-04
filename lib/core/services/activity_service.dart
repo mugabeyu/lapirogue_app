@@ -49,13 +49,13 @@ class ActivityService {
       final ecoPoints = (activityPrice / 100).ceil() * 5;
       final pointsToAward = ecoPoints > 0 ? ecoPoints : 25;
 
-      await _client.from('guest_eco_point_events').insert({
+      await _client.from('guest_eco_point_events').upsert({
         'guest_id': guestId,
         'source_type': 'ACTIVITY',
         'source_record_id': bookingId,
         'source_label': 'Completed activity: $activityName',
         'points': pointsToAward,
-      });
+      }, onConflict: 'source_type,source_record_id');
 
       return true;
     } catch (e) {

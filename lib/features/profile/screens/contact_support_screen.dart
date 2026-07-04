@@ -62,7 +62,7 @@ class ContactSupportScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(detail, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-            Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+            Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           ],
         ),
         trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary),

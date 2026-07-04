@@ -9,6 +9,33 @@ class ScheduleService {
 
   static SupabaseClient get _client => Supabase.instance.client;
 
+  Future<bool> createCustomItem({
+    required String guestId,
+    required String title,
+    required DateTime startAt,
+    DateTime? endAt,
+    String? notes,
+  }) async {
+    try {
+      final end = endAt ?? startAt.add(const Duration(hours: 1));
+      await _client.from('guest_schedule_items').insert({
+        'guest_id': guestId,
+        'title': title,
+        'item_type': 'CUSTOM',
+        'start_at': startAt.toUtc().toIso8601String(),
+        'end_at': end.toUtc().toIso8601String(),
+        'description': notes?.trim() ?? '',
+        'status': 'SCHEDULED',
+        'color': '#E7D7F0',
+        'source_module': 'guest_app',
+      });
+      return true;
+    } catch (e) {
+      if (kDebugMode) debugPrint('createCustomItem error: $e');
+      return false;
+    }
+  }
+
   Future<List<GuestScheduleItem>> getScheduleForGuest(
     String guestId, {
     DateTime? fromDate,
@@ -54,14 +81,26 @@ class ScheduleService {
       }
 
       for (final json in results[2]) {
-        final createdAt = json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now();
+        final scheduledDate = json['scheduled_date'] as String?;
+        final scheduledTime = json['scheduled_time'] as String?;
+        DateTime startAt;
+        if (scheduledDate != null && scheduledTime != null) {
+          final timeParts = scheduledTime.split(':');
+          final date = DateTime.parse(scheduledDate);
+          startAt = DateTime(
+            date.year, date.month, date.day,
+            int.tryParse(timeParts[0]) ?? 9, int.tryParse(timeParts[1]) ?? 0,
+          );
+        } else {
+          startAt = json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now();
+        }
         items.add(GuestScheduleItem(
           id: json['id'] ?? '',
           guestId: json['guest_id'] ?? '',
           title: 'Food Order #${json['order_id'] ?? json['id']?.toString().substring(0, 8)}',
           itemType: 'ORDER',
-          startAt: createdAt,
-          endAt: createdAt.add(const Duration(minutes: 30)),
+          startAt: startAt,
+          endAt: startAt.add(const Duration(minutes: 30)),
           description: json['notes'],
           status: json['status'] ?? 'PENDING',
           color: '#4CAF50',

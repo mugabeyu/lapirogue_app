@@ -338,7 +338,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                     alignment: Alignment.centerRight,
                     child: Text(
                       'per night',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -495,7 +495,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                     Center(
                       child: Text(
                         'A 6-digit verification code will be sent to your email',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ),
                   ],
@@ -528,7 +528,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                 ),
                 Text(
                   DateFormat('MMM dd, yyyy').format(date),

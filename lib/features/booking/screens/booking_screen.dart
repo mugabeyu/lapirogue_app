@@ -239,6 +239,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     SupabaseClient supabase,
   ) async {
     final total = widget.item.price * _quantity;
+    final time24 = _parseTimeSlot(_selectedTime);
+    final dateStr = _selectedDate.toIso8601String().split('T').first;
 
     final reservation = await supabase
         .from('reservations')
@@ -272,6 +274,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           'total': total,
           'status': 'PENDING',
           'origin': 'MOBILE_APP',
+          'scheduled_date': dateStr,
+          'scheduled_time': time24,
         })
         .select('id')
         .single();
@@ -331,7 +335,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final needsTime = item.type == BookingType.activity ||
-        item.type == BookingType.spa;
+        item.type == BookingType.spa ||
+        item.type == BookingType.dining ||
+        item.type == BookingType.roomService;
     final needsPickup = item.type == BookingType.activity;
     final usesParticipants = item.type == BookingType.activity ||
         item.type == BookingType.spa;

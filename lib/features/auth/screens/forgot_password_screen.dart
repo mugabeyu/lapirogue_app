@@ -67,7 +67,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   Text(
                     'We sent a password reset link to\n${_emailController.text.trim()}',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton(
@@ -98,7 +98,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     const SizedBox(height: 24),
                     const Text('Forgot your password?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
-                    Text("Enter your email and we'll send you a reset link", style: TextStyle(color: Colors.grey[600], fontSize: 15), textAlign: TextAlign.center),
+                    Text("Enter your email and we'll send you a reset link", style: TextStyle(color: AppColors.textSecondary, fontSize: 15), textAlign: TextAlign.center),
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _emailController,

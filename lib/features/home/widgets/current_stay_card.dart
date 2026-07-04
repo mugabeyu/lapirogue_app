@@ -68,7 +68,7 @@ class CurrentStayCard extends StatelessWidget {
                         color: AppColors.statusConfirmed.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('Checked In', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.statusConfirmed)),
+                      child: const Text('Checked In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.statusConfirmed)),
                     ),
                   ],
                 ),
@@ -84,31 +84,10 @@ class CurrentStayCard extends StatelessWidget {
                     Text('${reservation.adults + reservation.children} guests', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                   ],
                 ),
-                const SizedBox(height: 16),
-                _actionButton(context, Icons.date_range_outlined, 'Extend Stay', () {}),
               ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _actionButton(BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        side: const BorderSide(color: AppColors.lightGray2),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 18, color: AppColors.darkNavy),
-          const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
-        ],
-      ),
-    );
-  }
-}
+  }}

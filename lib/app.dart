@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
-import 'data/providers/theme_provider.dart';
 import 'data/providers/auth_provider.dart';
 
 class LapirogueHotelApp extends ConsumerWidget {
@@ -11,7 +10,6 @@ class LapirogueHotelApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
     final authState = ref.watch(authStateProvider);
 
     if (authState.isLoading) {
@@ -19,8 +17,6 @@ class LapirogueHotelApp extends ConsumerWidget {
         title: 'La Pirogue Hotel',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: themeMode,
         home: const Scaffold(
           body: Center(
             child: Column(
@@ -40,8 +36,6 @@ class LapirogueHotelApp extends ConsumerWidget {
       title: 'La Pirogue Hotel',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
       routerConfig: ref.watch(appRouterProvider),
     );
   }

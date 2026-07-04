@@ -167,6 +167,16 @@ class _OrderCard extends StatefulWidget {
 class _OrderCardState extends State<_OrderCard> {
   bool _expanded = false;
 
+  String _formatTimeDisplay(String time24) {
+    final parts = time24.split(':');
+    if (parts.length < 2) return time24;
+    final hour = int.tryParse(parts[0]) ?? 0;
+    final minute = parts[1];
+    final amPm = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    return '${displayHour.toString().padLeft(2, '0')}:$minute $amPm';
+  }
+
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
@@ -220,13 +230,21 @@ class _OrderCardState extends State<_OrderCard> {
                             fontSize: 15,
                           ),
                         ),
-                        if (order.createdAt != null)
+                        if (order.scheduledDate != null && order.scheduledTime != null)
+                          Text(
+                            'Scheduled: ${DateFormat('MMM dd, yyyy').format(order.scheduledDate!)} – ${_formatTimeDisplay(order.scheduledTime!)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          )
+                        else if (order.createdAt != null)
                           Text(
                             DateFormat('MMM dd, yyyy – hh:mm a')
                                 .format(order.createdAt!),
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.grey[500],
+                              color: AppColors.textSecondary,
                             ),
                           ),
                       ],
@@ -279,7 +297,7 @@ class _OrderCardState extends State<_OrderCard> {
                         'x${item['quantity'] ?? 1}',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -301,7 +319,7 @@ class _OrderCardState extends State<_OrderCard> {
                       'Total',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     Text(
@@ -320,7 +338,7 @@ class _OrderCardState extends State<_OrderCard> {
                     'Note: ${order.notes}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[500],
+                      color: AppColors.textSecondary,
                       fontStyle: FontStyle.italic,
                     ),
                   ),

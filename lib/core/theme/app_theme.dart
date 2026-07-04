@@ -149,30 +149,4 @@ class AppTheme {
     );
   }
 
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      fontFamily: GoogleFonts.inter().fontFamily,
-      textTheme: GoogleFonts.interTextTheme(
-        const TextTheme(
-          headlineLarge: AppTypography.heading,
-          headlineMedium: AppTypography.sectionTitle,
-          bodyMedium: AppTypography.body,
-          labelLarge: AppTypography.button,
-        ),
-      ),
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.goldAccent,
-        onPrimary: AppColors.darkNavy,
-        primaryContainer: AppColors.goldAccentDark,
-        secondary: AppColors.darkNavy,
-        surface: AppColors.surfaceDark,
-        onSurface: AppColors.textOnDark,
-        surfaceContainerHighest: AppColors.darkNavyLight,
-        error: AppColors.statusCancelled,
-      ),
-      scaffoldBackgroundColor: AppColors.surfaceDark,
-    );
-  }
 }

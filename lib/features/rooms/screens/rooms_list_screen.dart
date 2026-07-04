@@ -187,7 +187,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.w500)),
+            Text(label, style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
             const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -214,9 +214,9 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
           children: [
             Icon(Icons.calendar_month, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
-            Text('Select your dates', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey[600])),
+            Text('Select your dates', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
             const SizedBox(height: 8),
-            Text('Choose check-in and check-out dates\nto see available rooms', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+            Text('Choose check-in and check-out dates\nto see available rooms', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -233,9 +233,9 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
           children: [
             Icon(Icons.hotel, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
-            Text('No rooms available', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey[600])),
+            Text('No rooms available', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
             const SizedBox(height: 8),
-            Text('Try different dates', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+            Text('Try different dates', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -265,9 +265,9 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Icon(Icons.sort, size: 16, color: Colors.grey[500]),
+          Icon(Icons.sort, size: 16, color: AppColors.textSecondary),
           const SizedBox(width: 6),
-          Text('Sort by', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          Text('Sort by', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(width: 8),
           DropdownButton<_SortOrder>(
             value: _sortOrder,
@@ -338,7 +338,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text('MUR ${NumberFormat('#,###').format(room.price.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.darkNavy)),
-                          Text('per night', style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+                          Text('per night', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                         ],
                       ),
                     ],
@@ -346,7 +346,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                   const SizedBox(height: 10),
                   Text(room.roomNumber, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Text('Up to ${room.capacity} guests', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                  Text('Up to ${room.capacity} guests', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                   if (room.amenities.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Wrap(
@@ -357,7 +357,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                           color: AppColors.lightGray,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(a, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                        child: Text(a, style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                       )).toList(),
                     ),
                   ],
@@ -371,7 +371,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('$nights nights', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                        Text('$nights nights', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                         Text('MUR ${NumberFormat('#,###').format(totalPrice.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.darkNavy)),
                       ],
                     ),

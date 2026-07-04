@@ -12,6 +12,15 @@ import '../../../core/services/schedule_service.dart';
 import '../../../core/services/session_service.dart';
 import '../../../core/theme/app_colors.dart';
 
+String formatDate(DateTime date) {
+  return DateFormat('MMM dd, yyyy').format(date);
+}
+
+String shortRef(String value) {
+  if (value.isEmpty) return 'Pending';
+  return value.length <= 8 ? value : value.substring(0, 8);
+}
+
 class ReservationsScreen extends ConsumerWidget {
   const ReservationsScreen({super.key});
 
@@ -28,15 +37,6 @@ class ReservationsScreen extends ConsumerWidget {
       default:
         return Colors.grey;
     }
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('MMM dd, yyyy').format(date);
-  }
-
-  String _shortRef(String value) {
-    if (value.isEmpty) return 'Pending';
-    return value.length <= 8 ? value : value.substring(0, 8);
   }
 
   Future<List<Reservation>> _fetchGuestReservations(String guestId) async {
@@ -161,7 +161,7 @@ class ReservationsScreen extends ConsumerWidget {
                         const Text(
                           'Start exploring rooms and make your first reservation!',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton(
@@ -212,7 +212,7 @@ class ReservationsScreen extends ConsumerWidget {
                                 ),
                               ),
                               Text(
-                                'Ref: ${_shortRef(reservation.reservationId)}',
+                                'Ref: ${shortRef(reservation.reservationId)}',
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 12,
@@ -243,11 +243,11 @@ class ReservationsScreen extends ConsumerWidget {
                                           'Check-in',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.grey,
+                                            color: AppColors.textSecondary,
                                           ),
                                         ),
                                         Text(
-                                          _formatDate(reservation.checkIn),
+                                          formatDate(reservation.checkIn),
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
@@ -265,11 +265,11 @@ class ReservationsScreen extends ConsumerWidget {
                                           'Check-out',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.grey,
+                                            color: AppColors.textSecondary,
                                           ),
                                         ),
                                         Text(
-                                          _formatDate(reservation.checkOut),
+                                          formatDate(reservation.checkOut),
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
@@ -321,7 +321,7 @@ class ReservationsScreen extends ConsumerWidget {
                                 children: [
                                   const Text(
                                     'Total Amount',
-                                    style: TextStyle(color: Colors.grey),
+style: TextStyle(color: AppColors.textSecondary),
                                   ),
                                   Text(
                                     'MUR ${reservation.totalAmount.toStringAsFixed(2)}',
@@ -471,20 +471,42 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
       return;
     }
 
-    await EcoPointsService().earnPoints(
-      guestId: guestId,
-      points: 25,
-      description: 'Completed scheduled activity: ${item.title}',
-      sourceType: 'SCHEDULE',
-      sourceRecordId: item.id,
-    );
+    int points = 25;
+    if (item.sourceModule == 'activity_bookings') {
+      final awarded = await ActivityService().markActivityCompleted(
+        bookingId: item.id,
+        guestId: guestId,
+      );
+      if (awarded) {
+        points = 0;
+      }
+    }
+
+    if (points > 0) {
+      final earned = await EcoPointsService().earnPoints(
+        guestId: guestId,
+        points: points,
+        description: 'Completed scheduled activity: ${item.title}',
+        sourceType: 'SCHEDULE',
+        sourceRecordId: item.id,
+      );
+      if (!earned) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Item completed but failed to award eco points.'),
+            backgroundColor: AppColors.statusCancelled,
+          ),
+        );
+      }
+    }
 
     if (!mounted) return;
     _future = _loadItems();
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('+25 eco-points earned. Schedule item completed.'),
+        content: Text('Schedule item completed.'),
         backgroundColor: AppColors.statusConfirmed,
       ),
     );
@@ -514,23 +536,32 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
             ),
           ],
         ),
+        const SizedBox(height: 16),
         if (_ecoLoaded) ...[
-          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.darkNavy.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.statusConfirmed.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.eco, size: 18, color: AppColors.statusConfirmed),
-                const SizedBox(width: 6),
+                const Icon(Icons.eco, size: 22, color: AppColors.statusConfirmed),
+                const SizedBox(width: 10),
                 Text(
-                  '$_ecoPointsBalance eco-points earned',
+                  '$_ecoPointsBalance',
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.statusConfirmed,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  'Eco Points Earned',
+                  style: TextStyle(
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.statusConfirmed,
                   ),
@@ -538,6 +569,7 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
         ],
         FutureBuilder<List<GuestScheduleItem>>(
           future: _future,
@@ -562,7 +594,7 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
                   widget.reservation.isConfirmed
                       ? 'No activities planned yet. Book tours for your stay dates to build your itinerary.'
                       : 'Your daily schedule will appear here once your reservation is confirmed.',
-                  style: TextStyle(color: Colors.grey[700]),
+                  style: TextStyle(color: AppColors.textPrimary),
                 ),
               );
             }
@@ -627,7 +659,7 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
                           item.location!,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],

@@ -82,7 +82,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Your room has been successfully booked.',
-                  style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 28),
                 Container(
@@ -129,7 +129,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                             '#${reservation?.reservationId ?? (reservationId.length > 8 ? reservationId.substring(0, 8) : reservationId)}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[400],
+                              color: AppColors.textTertiary,
                               fontFamily: 'monospace',
                             ),
                           ),
@@ -231,7 +231,7 @@ class BookingConfirmationScreen extends StatelessWidget {
                     onPressed: () => context.go('/'),
                     child: Text(
                       'Back to Home',
-                      style: TextStyle(color: Colors.grey[500]),
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 ),
@@ -256,7 +256,7 @@ class BookingConfirmationScreen extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),

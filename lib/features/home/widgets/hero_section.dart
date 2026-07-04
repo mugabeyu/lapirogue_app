@@ -17,6 +17,14 @@ class HeroSection extends StatelessWidget {
     this.weatherCondition = 'Partly Cloudy',
   });
 
+  String _greeting(String name) {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning, $name \u{1F44B}';
+    if (hour < 17) return 'Good Afternoon, $name \u{1F44B}';
+    if (hour < 21) return 'Good Evening, $name \u{1F44B}';
+    return 'Good Night, $name \u{1F44B}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final name = firstName ?? 'Guest';
@@ -54,10 +62,6 @@ class HeroSection extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      GestureDetector(
-                        onTap: () => Scaffold.of(context).openDrawer(),
-                        child: Icon(Icons.menu, color: Colors.white.withValues(alpha: 0.9), size: 24),
-                      ),
                       const Spacer(),
                       Image.asset('assets/images/lapirogue_logo.jpg', height: 32, fit: BoxFit.contain),
                       const Spacer(),
@@ -69,7 +73,7 @@ class HeroSection extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'Good Afternoon, $name \u{1F44B}',
+                    _greeting(name),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 26,

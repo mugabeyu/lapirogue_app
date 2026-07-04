@@ -83,7 +83,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                   const SizedBox(height: 24),
                   const Text('Messaging', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  Text('Sign in to send messages to hotel staff', style: TextStyle(color: Colors.grey[600])),
+                  Text('Sign in to send messages to hotel staff', style: TextStyle(color: AppColors.textSecondary)),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () { Navigator.of(context).pop(); context.push('/login'); },
@@ -152,7 +152,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                           const SizedBox(height: 16),
                           const Text('No messages yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                           const SizedBox(height: 8),
-                          Text('Send a message to hotel staff', style: TextStyle(color: Colors.grey[600])),
+                          Text('Send a message to hotel staff', style: TextStyle(color: AppColors.textSecondary)),
                         ],
                       ),
                     ),

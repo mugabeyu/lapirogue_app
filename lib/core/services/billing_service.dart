@@ -46,15 +46,18 @@ class BillingService {
         _client
             .from('reservations')
             .select('reservation_id, total_amount, created_at')
-            .eq('guest_id', guestId),
+            .eq('guest_id', guestId)
+            .neq('status', 'CANCELLED'),
         _client
             .from('activity_bookings')
             .select('activities(name, price), participants, booking_date')
-            .eq('guest_id', guestId),
+            .eq('guest_id', guestId)
+            .neq('status', 'CANCELLED'),
         _client
             .from('food_orders')
             .select('order_id, subtotal, service_charge, tax_amount, total, created_at')
-            .eq('guest_id', guestId),
+            .eq('guest_id', guestId)
+            .neq('status', 'CANCELLED'),
         _client
             .from('payments')
             .select('amount, status')
@@ -170,10 +173,10 @@ class BillingService {
       double totalPaid = 0;
       for (final p in payments) {
         final amount = (p['amount'] ?? 0).toDouble();
-        final status = p['status'] ?? 'PENDING';
+        final status = (p['status'] ?? '').toString().toUpperCase();
         if (status == 'REFUNDED') {
           totalPaid -= amount;
-        } else if (status != 'PENDING') {
+        } else if (status == 'PAID' || status == 'COMPLETED' || status == 'PARTIALLY_PAID') {
           totalPaid += amount;
         }
       }

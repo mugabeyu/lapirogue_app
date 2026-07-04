@@ -15,6 +15,8 @@ class FoodOrder {
   final String? origin;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final DateTime? scheduledDate;
+  final String? scheduledTime;
 
   FoodOrder({
     required this.id,
@@ -33,6 +35,8 @@ class FoodOrder {
     this.origin,
     this.createdAt,
     this.updatedAt,
+    this.scheduledDate,
+    this.scheduledTime,
   });
 
   factory FoodOrder.fromJson(Map<String, dynamic> json) {
@@ -55,6 +59,10 @@ class FoodOrder {
           ? DateTime.parse(json['created_at']) 
           : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
+      scheduledDate: json['scheduled_date'] != null
+          ? DateTime.parse(json['scheduled_date'])
+          : null,
+      scheduledTime: json['scheduled_time'],
     );
   }
 
@@ -73,6 +81,8 @@ class FoodOrder {
       'notes': notes,
       'created_by_name': createdByName,
       'origin': origin,
+      'scheduled_date': scheduledDate?.toIso8601String().split('T').first,
+      'scheduled_time': scheduledTime,
     };
   }
 }
