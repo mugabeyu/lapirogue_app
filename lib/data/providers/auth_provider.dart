@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/models/guest.dart';
 import '../../core/services/session_service.dart';
+import '../../core/services/auth_service.dart';
 
 enum AuthStatus { unauthenticated, authenticated }
 
@@ -106,14 +109,81 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final lockout = await Supabase.instance.client.rpc(
+        'check_login_lockout',
+        params: {'p_email': email},
+      );
+      if (lockout is Map && lockout['locked'] == true) {
+        state = state.copyWith(isLoading: false, error: _lockoutMessage(lockout));
+        return;
+      }
+    } catch (_) {
+      // If the lockout check itself fails, don't block a legitimate login attempt.
+    }
+
     try {
       await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
+
+      try {
+        await Supabase.instance.client.rpc(
+          'record_login_attempt',
+          params: {'p_email': email, 'p_success': true},
+        );
+      } catch (_) {}
+
       await _loadGuest();
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Invalid credentials');
+      Map<String, dynamic>? attemptState;
+      try {
+        final result = await Supabase.instance.client.rpc(
+          'record_login_attempt',
+          params: {'p_email': email, 'p_success': false},
+        );
+        if (result is Map) attemptState = Map<String, dynamic>.from(result);
+      } catch (_) {}
+
+      // Progressive delay: wait longer for each additional failed attempt.
+      final attempts = (attemptState?['attempts'] as int?) ?? 1;
+      await Future.delayed(Duration(seconds: attempts.clamp(1, 5)));
+
+      if (attemptState != null && attemptState['locked'] == true) {
+        final lockedUntil = attemptState['lockedUntil'] as String?;
+        if (lockedUntil != null) {
+          _sendLockoutAlertEmail(email, lockedUntil);
+        }
+        state = state.copyWith(isLoading: false, error: _lockoutMessage(attemptState));
+        return;
+      }
+
+      final remaining = attemptState?['remainingAttempts'] as int?;
+      final suffix = remaining != null
+          ? ' $remaining attempt${remaining == 1 ? '' : 's'} remaining before your account is temporarily locked.'
+          : '';
+      state = state.copyWith(isLoading: false, error: 'Invalid credentials.$suffix');
+    }
+  }
+
+  String _lockoutMessage(Map lockout) {
+    final seconds = (lockout['remainingSeconds'] as int?) ?? 15 * 60;
+    final minutes = (seconds / 60).ceil().clamp(1, 999);
+    return 'This account is temporarily locked due to repeated failed login attempts. Please try again in $minutes minute${minutes == 1 ? '' : 's'}.';
+  }
+
+  Future<void> _sendLockoutAlertEmail(String email, String lockedUntil) async {
+    try {
+      final baseUrl = await AuthService().baseUrl;
+      await http.post(
+        Uri.parse('$baseUrl/api/auth/security-alert'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'lockedUntil': lockedUntil}),
+      );
+    } catch (_) {
+      // Best-effort: never let alert-email failure affect the login flow.
     }
   }
 
