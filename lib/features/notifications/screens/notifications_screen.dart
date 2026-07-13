@@ -133,9 +133,17 @@ class NotificationsScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isRead ? AppColors.textSecondary : AppColors.textPrimary)),
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isRead ? AppColors.textSecondary : AppColors.textPrimary),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Text(time, style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     ],
                   ),

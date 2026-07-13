@@ -142,7 +142,7 @@ class ProfileScreen extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 240,
+            expandedHeight: 300,
             pinned: true,
             backgroundColor: AppColors.darkNavy,
             flexibleSpace: FlexibleSpaceBar(
@@ -154,48 +154,66 @@ class ProfileScreen extends ConsumerWidget {
                     end: Alignment.bottomCenter,
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    const SizedBox(height: 100),
-                    GestureDetector(
-                      onTap: () => _showPhotoOptions(context, ref, guest.id),
-                      child: Stack(
-                        children: [
-                          Container(
-                            width: 88, height: 88,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                              image: guest.imagePath != null
-                                  ? DecorationImage(image: NetworkImage(guest.imagePath!), fit: BoxFit.cover)
-                                  : null,
-                              color: AppColors.goldAccent,
-                            ),
-                            child: guest.imagePath == null
-                                ? Center(child: Text('${guest.firstName[0]}${guest.lastName[0]}', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w600)))
-                                : null,
-                          ),
-                          Positioned(
-                            bottom: 0, right: 0,
-                            child: Container(
-                              width: 28, height: 28,
-                              decoration: BoxDecoration(
-                                color: AppColors.darkNavy,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 56),
+                        GestureDetector(
+                          onTap: () => _showPhotoOptions(context, ref, guest.id),
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 88, height: 88,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 3),
+                                  image: guest.imagePath != null
+                                      ? DecorationImage(image: NetworkImage(guest.imagePath!), fit: BoxFit.cover)
+                                      : null,
+                                  color: AppColors.goldAccent,
+                                ),
+                                child: guest.imagePath == null
+                                    ? Center(child: Text('${guest.firstName[0]}${guest.lastName[0]}', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w600)))
+                                    : null,
                               ),
-                              child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
-                            ),
+                              Positioned(
+                                bottom: 0, right: 0,
+                                child: Container(
+                                  width: 28, height: 28,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.darkNavy,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            guest.fullName,
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text('Guest ID: ${guest.guestId}', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
+                        const SizedBox(height: 12),
+                        _buildStatusBadge(guest),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(guest.fullName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600)),
-                    Text('Guest ID: ${guest.guestId}', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
-                    const SizedBox(height: 16),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -205,8 +223,6 @@ class ProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
                 children: [
-                  _buildStatusBadge(guest),
-                  const SizedBox(height: 16),
                   _buildSection('Personal Details', [
                     _buildRow(Icons.person_outline, 'First Name', guest.firstName),
                     _buildRow(Icons.person_outline, 'Last Name', guest.lastName),
@@ -291,13 +307,15 @@ class ProfileScreen extends ConsumerWidget {
     }
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (isVip)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: AppColors.goldAccent.withValues(alpha: 0.15),
+              color: AppColors.goldAccent.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.4)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -312,25 +330,15 @@ class ProfileScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: statusColor.withValues(alpha: 0.12),
+            color: statusColor.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: statusColor.withValues(alpha: 0.5)),
           ),
           child: Text(
             status.replaceAll('_', ' '),
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
           ),
         ),
-        const Spacer(),
-        if (guest.notes != null && guest.notes!.isNotEmpty)
-          Flexible(
-            child: Text(
-              guest.notes!,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
-              textAlign: TextAlign.end,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
       ],
     );
   }

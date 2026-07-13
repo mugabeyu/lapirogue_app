@@ -46,18 +46,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               firstName: authState.guest?.firstName,
             ),
           ),
-          SliverToBoxAdapter(
-            child: Transform.translate(
-              offset: const Offset(0, -20),
-              child: BookingCard(
-                checkIn: _checkIn,
-                checkOut: _checkOut,
-                onCheckInChanged: (d) => setState(() => _checkIn = d),
-                onCheckOutChanged: (d) => setState(() => _checkOut = d),
-                onSearch: () => context.push('/rooms'),
+          if (!hasActive)
+            SliverToBoxAdapter(
+              child: Transform.translate(
+                offset: const Offset(0, -20),
+                child: BookingCard(
+                  checkIn: _checkIn,
+                  checkOut: _checkOut,
+                  onCheckInChanged: (d) => setState(() => _checkIn = d),
+                  onCheckOutChanged: (d) => setState(() => _checkOut = d),
+                  onSearch: () => context.push('/rooms'),
+                ),
               ),
             ),
-          ),
           if (hasActive && reservation != null)
             SliverToBoxAdapter(
               child: Padding(
