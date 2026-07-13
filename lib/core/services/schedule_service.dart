@@ -46,8 +46,6 @@ class ScheduleService {
         _client.from('guest_schedule_items').select('*').eq('guest_id', guestId).order('start_at'),
         _client.from('activity_bookings').select('*, activities(name)').eq('guest_id', guestId).order('booking_date'),
         _client.from('food_orders').select('*').eq('guest_id', guestId).order('created_at'),
-        _client.from('guest_orders').select('*').eq('guest_id', guestId).order('order_time'),
-        _client.from('itinerary_events').select('*').eq('guest_id', guestId).order('start_at'),
         _client.from('reservations').select('*, rooms(*)').eq('guest_id', guestId).order('check_in'),
       ]);
 
@@ -110,40 +108,6 @@ class ScheduleService {
       }
 
       for (final json in results[3]) {
-        final orderTime = json['order_time'] != null ? DateTime.parse(json['order_time']) : DateTime.now();
-        items.add(GuestScheduleItem(
-          id: json['id'] ?? '',
-          guestId: json['guest_id'] ?? '',
-          title: 'Order #${json['order_id'] ?? json['id']?.toString().substring(0, 8)}',
-          itemType: 'ORDER',
-          startAt: orderTime,
-          endAt: orderTime.add(const Duration(minutes: 30)),
-          description: json['notes'],
-          status: json['status'] ?? 'PENDING',
-          color: '#4CAF50',
-          sourceModule: 'guest_orders',
-          notes: json['notes'],
-        ));
-      }
-
-      for (final json in results[4]) {
-        items.add(GuestScheduleItem(
-          id: json['id'] ?? '',
-          guestId: json['guest_id'] ?? '',
-          title: json['title'] ?? '',
-          itemType: (json['category'] ?? 'ACTIVITY').toString().toUpperCase(),
-          startAt: DateTime.parse(json['start_at'] ?? DateTime.now().toIso8601String()),
-          endAt: DateTime.parse(json['end_at'] ?? DateTime.now().toIso8601String()),
-          location: json['location'],
-          description: json['description'],
-          status: json['status'] ?? 'CONFIRMED',
-          color: '#3B82F6',
-          sourceModule: 'itinerary_events',
-          notes: json['description'],
-        ));
-      }
-
-      for (final json in results[5]) {
         final room = json['rooms'];
         final roomLabel = room != null ? 'Room ${room['room_number'] ?? '--'}' : '';
         final checkIn = DateTime.parse(json['check_in'] ?? DateTime.now().toIso8601String());
@@ -262,18 +226,6 @@ class ScheduleService {
           await _client
               .from('food_orders')
               .update({'status': 'SERVED'})
-              .eq('id', itemId);
-          return true;
-        case 'guest_orders':
-          await _client
-              .from('guest_orders')
-              .update({'status': 'COMPLETED'})
-              .eq('id', itemId);
-          return true;
-        case 'itinerary_events':
-          await _client
-              .from('itinerary_events')
-              .update({'status': 'COMPLETED'})
               .eq('id', itemId);
           return true;
         default:
