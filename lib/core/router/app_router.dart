@@ -23,6 +23,7 @@ import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/email_verification_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/feedback/screens/feedback_screen.dart';
 import '../../features/hotel_info/screens/hotel_info_screen.dart';
 import '../../features/schedule/screens/daily_schedule_screen.dart';
@@ -41,6 +42,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: false,
+    urlPathStrategy: UrlPathStrategy.path,
     redirect: (context, state) {
       final isLoggedIn = authState.isAuthenticated;
       final isAuthRoute =
@@ -147,8 +149,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/forgot-password',
-        
+
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+
+        builder: (context, state) {
+          final token = state.uri.queryParameters['token'];
+          return ResetPasswordScreen(token: token);
+        },
       ),
       GoRoute(
         path: '/rooms',
