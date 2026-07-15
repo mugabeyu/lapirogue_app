@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../core/services/content_service.dart';
 import '../../../core/models/site_content_page.dart';
 import '../../../core/models/hotel_service.dart';
-import '../../../core/models/emergency_contact.dart';
 import '../../../core/theme/app_theme.dart';
 
 class HotelInfoScreen extends StatefulWidget {
@@ -15,7 +14,6 @@ class HotelInfoScreen extends StatefulWidget {
 class _HotelInfoScreenState extends State<HotelInfoScreen> {
   SiteContentPage? _hotelInfo;
   List<HotelService> _services = [];
-  List<EmergencyContact> _emergencyContacts = [];
   bool _isLoading = true;
 
   @override
@@ -29,13 +27,11 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
       final results = await Future.wait([
         ContentService().getPage('about'),
         ContentService().getHotelServices(),
-        ContentService().getEmergencyContacts(),
       ]);
 
       setState(() {
         _hotelInfo = results[0] as SiteContentPage?;
         _services = results[1] as List<HotelService>;
-        _emergencyContacts = results[2] as List<EmergencyContact>;
         _isLoading = false;
       });
     } catch (e) {
@@ -60,8 +56,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
       case 'location_on': return Icons.location_on;
       case 'concierge': return Icons.support_agent;
       case 'info': return Icons.info;
-      case 'warning':
-      case 'emergency': return Icons.warning;
+      case 'warning': return Icons.warning;
       case 'medical':
       case 'hospital': return Icons.local_hospital;
       case 'fire':
@@ -90,11 +85,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                   children: [
                     if (_hotelInfo != null) _buildAboutSection(),
                     if (_services.isNotEmpty) _buildServicesSection(),
-                    if (_emergencyContacts.isNotEmpty)
-                      _buildEmergencySection(),
-                    if (_hotelInfo == null &&
-                        _services.isEmpty &&
-                        _emergencyContacts.isEmpty)
+                    if (_hotelInfo == null && _services.isEmpty)
                       _buildEmptyState(),
                     const SizedBox(height: 32),
                   ],
@@ -340,70 +331,4 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
     );
   }
 
-  Widget _buildEmergencySection() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Emergency Contacts',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ..._emergencyContacts.map((contact) {
-            final color = _parseHexColor(contact.colorHex);
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(_iconFromName(contact.iconName), color: color, size: 24),
-                ),
-                title: Text(contact.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (contact.description.isNotEmpty)
-                      Text(contact.description, style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        const Icon(Icons.phone, size: 14, color: AppTheme.textTertiary),
-                        const SizedBox(width: 4),
-                        Text(contact.phoneNumber, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                        if (contact.is24h) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentGreen.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text('24/7', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentGreen)),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Color _parseHexColor(String hex) {
-    hex = hex.replaceAll('#', '');
-    if (hex.length == 6) hex = 'FF$hex';
-    return Color(int.parse(hex, radix: 16));
-  }
 }

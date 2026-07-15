@@ -13,4 +13,3 @@ export 'guest_schedule_item.dart';
 export 'site_content_page.dart';
 export 'hotel_service.dart';
 export 'hotel_service_category.dart';
-export 'emergency_contact.dart';

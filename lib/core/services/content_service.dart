@@ -2,7 +2,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/site_content_page.dart';
 import '../models/hotel_service.dart';
 import '../models/hotel_service_category.dart';
-import '../models/emergency_contact.dart';
 
 class ContentService {
   static final ContentService _instance = ContentService._internal();
@@ -51,16 +50,4 @@ class ContentService {
     }
   }
 
-  Future<List<EmergencyContact>> getEmergencyContacts() async {
-    try {
-      final response = await _client
-          .from('emergency_contacts')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
-      return response.map((e) => EmergencyContact.fromJson(e)).toList();
-    } catch (e) {
-      return [];
-    }
-  }
 }
