@@ -64,8 +64,7 @@ class ReservationNotifier extends StateNotifier<ReservationState> {
 
     for (final reservation in reservations) {
       if (reservation.status == 'RESERVED' ||
-          reservation.status == 'CONFIRMED' ||
-          reservation.status == 'PENDING') {
+          reservation.status == 'CONFIRMED') {
         return reservation;
       }
     }
@@ -94,9 +93,8 @@ class ReservationNotifier extends StateNotifier<ReservationState> {
           'CHECKED_IN' => ReservationStatusType.checkedIn,
           'RESERVED' => ReservationStatusType.reserved,
           'CONFIRMED' => ReservationStatusType.reserved,
-          'PENDING' => ReservationStatusType.pending,
           'CHECKED_OUT' => ReservationStatusType.checkedOut,
-          'CANCELLED' => ReservationStatusType.cancelled,
+          'CANCELLED' || 'NO_SHOW' => ReservationStatusType.cancelled,
           _ => ReservationStatusType.reserved,
         };
       }

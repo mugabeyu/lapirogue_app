@@ -41,7 +41,6 @@ class Reservation {
     this.room,
   });
 
-  bool get isPending => status == 'PENDING';
   bool get isConfirmed => status == 'CONFIRMED' || status == 'RESERVED';
   bool get isCheckedIn => status == 'CHECKED_IN';
 
@@ -59,7 +58,7 @@ class Reservation {
           : DateTime.now().add(const Duration(days: 1)),
       adults: json['adults'] ?? 1,
       children: json['children'] ?? 0,
-      status: json['status'] ?? 'PENDING',
+      status: json['status'] ?? 'RESERVED',
       totalAmount: (json['total_amount'] ?? 0).toDouble(),
       notes: json['notes'],
       createdBy: json['created_by'],

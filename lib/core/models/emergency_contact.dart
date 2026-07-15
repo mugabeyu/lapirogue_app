@@ -5,6 +5,7 @@ class EmergencyContact {
   final String phoneNumber;
   final String iconName;
   final String colorHex;
+  final String? bgColorHex;
   final bool is24h;
   final int displayOrder;
   final bool isActive;
@@ -16,6 +17,7 @@ class EmergencyContact {
     required this.phoneNumber,
     this.iconName = 'warning',
     this.colorHex = '#EF4444',
+    this.bgColorHex,
     this.is24h = true,
     this.displayOrder = 0,
     this.isActive = true,
@@ -29,6 +31,7 @@ class EmergencyContact {
       phoneNumber: json['phone_number'] ?? '',
       iconName: json['icon_name'] ?? 'warning',
       colorHex: json['color_hex'] ?? '#EF4444',
+      bgColorHex: json['bg_color_hex'],
       is24h: json['is_24h'] ?? true,
       displayOrder: json['display_order'] ?? 0,
       isActive: json['is_active'] ?? true,

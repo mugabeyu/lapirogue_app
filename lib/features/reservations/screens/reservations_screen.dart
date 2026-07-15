@@ -29,10 +29,10 @@ class ReservationsScreen extends ConsumerWidget {
       case 'CHECKED_IN':
         return AppColors.statusConfirmed;
       case 'RESERVED':
+      case 'CONFIRMED':
         return AppColors.darkNavy;
-      case 'PENDING':
-        return Colors.orange;
       case 'CANCELLED':
+      case 'NO_SHOW':
         return AppColors.statusCancelled;
       default:
         return Colors.grey;
