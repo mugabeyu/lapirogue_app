@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/models/guest.dart';
 import '../../core/services/session_service.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/utils/error_messages.dart';
 
 enum AuthStatus { unauthenticated, authenticated }
 
@@ -103,7 +104,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: 'We couldn\'t load your profile. Please try again.');
     }
   }
 
@@ -203,7 +204,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Registration failed: $e',
+        error: friendlyAuthError(e),
       );
       return false;
     }

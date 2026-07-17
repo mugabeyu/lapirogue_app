@@ -29,6 +29,7 @@ import '../../features/hotel_info/screens/hotel_info_screen.dart';
 import '../../features/schedule/screens/daily_schedule_screen.dart';
 import '../../features/payments/screens/payments_screen.dart';
 import '../../features/profile/screens/payment_methods_screen.dart';
+import '../../features/profile/screens/update_password_screen.dart';
 import '../../features/profile/screens/privacy_screen.dart';
 import '../../features/profile/screens/help_screen.dart';
 import '../../features/profile/screens/contact_support_screen.dart';
@@ -36,14 +37,37 @@ import '../../features/profile/screens/contact_support_screen.dart';
 import '../../data/providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 
+class _AuthRefreshNotifier extends ChangeNotifier {
+  _AuthRefreshNotifier(Ref ref) {
+    ref.listen<AuthState>(authStateProvider, (previous, next) {
+      if (previous?.isAuthenticated != next.isAuthenticated ||
+          previous?.needsOnboarding != next.needsOnboarding) {
+        notifyListeners();
+      }
+    });
+  }
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  // IMPORTANT: this provider must stay stable across auth state changes.
+  // It intentionally does NOT `ref.watch(authStateProvider)` — doing so
+  // would recreate (dispose + rebuild) the GoRouter, including its
+  // GoRouteInformationProvider, every time `isLoading` toggles (i.e. on
+  // every login/signUp call). Any in-flight `context.push`/`context.go`
+  // issued right after such a call would then crash with
+  // "A GoRouteInformationProvider was used after being disposed."
+  // Instead, auth state is read fresh inside `redirect` via `ref.read`,
+  // and `refreshListenable` tells GoRouter to re-run `redirect` when it
+  // actually matters (auth/onboarding status changes) without tearing
+  // down the router itself.
+  final refreshNotifier = _AuthRefreshNotifier(ref);
 
   final router = GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: false,
-    urlPathStrategy: UrlPathStrategy.path,
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
       final isLoggedIn = authState.isAuthenticated;
       final isAuthRoute =
           state.matchedLocation == '/login' ||
@@ -77,9 +101,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
+            path: '/rooms',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: RoomsListScreen()),
+          ),
+          GoRoute(
+            path: '/reservations',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ReservationsScreen()),
+          ),
+          GoRoute(
+            path: '/dining',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: DiningScreen()),
+          ),
+          GoRoute(
             path: '/my-stay',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: MyStayScreen()),
+          ),
+          GoRoute(
+            path: '/daily-schedule',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: DailyScheduleScreen()),
           ),
           GoRoute(
             path: '/messages',
@@ -92,10 +136,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: ProfileScreen()),
           ),
         ],
-      ),
-      GoRoute(
-        path: '/reservations',
-        builder: (context, state) => const ReservationsScreen(),
       ),
       GoRoute(
         path: '/booking-confirmation',
@@ -156,25 +196,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/reset-password',
 
         builder: (context, state) {
-          final token = state.uri.queryParameters['token'];
-          return ResetPasswordScreen(token: token);
+          final extra = state.extra as Map<String, dynamic>?;
+          final email = extra?['email'] as String? ?? state.uri.queryParameters['email'];
+          return ResetPasswordScreen(email: email);
         },
       ),
       GoRoute(
-        path: '/rooms',
-        
-        builder: (context, state) => const RoomsListScreen(),
-      ),
-      GoRoute(
         path: '/rooms/:id',
-        
+
         builder: (context, state) =>
             RoomDetailScreen(roomId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/dining',
-        
-        builder: (context, state) => const DiningScreen(),
       ),
       GoRoute(
         path: '/orders',
@@ -217,14 +248,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HotelInfoScreen(),
       ),
       GoRoute(
-        path: '/daily-schedule',
-        
-        builder: (context, state) => const DailyScheduleScreen(),
-      ),
-      GoRoute(
         path: '/payments',
         
         builder: (context, state) => const PaymentsScreen(),
+      ),
+      GoRoute(
+        path: '/update-password',
+
+        builder: (context, state) => const UpdatePasswordScreen(),
       ),
       GoRoute(
         path: '/payment-methods',
@@ -249,7 +280,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 
-  ref.onDispose(() => router.dispose());
+  ref.onDispose(() {
+    router.dispose();
+    refreshNotifier.dispose();
+  });
   return router;
 });
 
@@ -262,81 +296,69 @@ class MainShell extends ConsumerWidget {
     final location = GoRouterState.of(context).matchedLocation;
 
     int currentIndex = 0;
-    if (location == '/my-stay') currentIndex = 1;
+    if (location == '/daily-schedule') currentIndex = 1;
     if (location == '/messages') currentIndex = 2;
     if (location == '/profile') currentIndex = 3;
 
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
+          border: Border(top: BorderSide(color: AppColors.lightGray2, width: 1)),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                ),
-                child: BottomNavigationBar(
-                  currentIndex: currentIndex,
-                  onTap: (index) {
-                    switch (index) {
-                      case 0:
-                        context.go('/');
-                      case 1:
-                        context.go('/my-stay');
-                      case 2:
-                        context.go('/messages');
-                      case 3:
-                        context.go('/profile');
-                    }
-                  },
-                  backgroundColor: AppColors.surfaceLight,
-                  elevation: 0,
-                  type: BottomNavigationBarType.fixed,
-                  selectedItemColor: AppColors.darkNavy,
-                  unselectedItemColor: AppColors.textTertiary,
-                  selectedFontSize: 11,
-                  unselectedFontSize: 11,
-                  selectedLabelStyle: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.home_outlined),
-                      activeIcon: Icon(Icons.home),
-                      label: 'Home',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.villa_outlined),
-                      activeIcon: Icon(Icons.villa),
-                      label: 'My Stay',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.chat_outlined),
-                      activeIcon: Icon(Icons.chat),
-                      label: 'Messages',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.person_outline),
-                      activeIcon: Icon(Icons.person),
-                      label: 'Profile',
-                    ),
-                  ],
-                ),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+            ),
+            child: BottomNavigationBar(
+              currentIndex: currentIndex,
+              onTap: (index) {
+                switch (index) {
+                  case 0:
+                    context.go('/');
+                  case 1:
+                    context.go('/daily-schedule');
+                  case 2:
+                    context.go('/messages');
+                  case 3:
+                    context.go('/profile');
+                }
+              },
+              backgroundColor: Colors.white,
+              elevation: 0,
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: AppColors.textTertiary,
+              selectedFontSize: 11,
+              unselectedFontSize: 11,
+              selectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
               ),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined),
+                  activeIcon: Icon(Icons.home),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.event_note_outlined),
+                  activeIcon: Icon(Icons.event_note),
+                  label: 'Schedule',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.chat_bubble_outline),
+                  activeIcon: Icon(Icons.chat_bubble),
+                  label: 'Messages',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outline),
+                  activeIcon: Icon(Icons.person),
+                  label: 'Profile',
+                ),
+              ],
             ),
           ),
         ),

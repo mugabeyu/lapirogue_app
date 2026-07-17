@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/error_messages.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/reservation_provider.dart';
 
@@ -80,7 +81,7 @@ class _EmailVerificationScreenState
 
   Future<void> _verifyOtp() async {
     if (_otpCode.length != 6) {
-      _showSnack('Please enter the complete 6-digit code', Colors.red);
+      _showSnack('Please enter the complete 6-digit code', AppColors.statusCancelled);
       return;
     }
 
@@ -132,12 +133,7 @@ class _EmailVerificationScreenState
       _timer?.cancel();
       context.go('/');
     } catch (e) {
-      _showSnack(
-        e.toString().contains('Invalid')
-            ? 'Invalid or expired code'
-            : 'Verification failed. Try again.',
-        Colors.red,
-      );
+      _showSnack(friendlyAuthError(e), AppColors.statusCancelled);
     }
 
     setState(() => _isVerifying = false);
@@ -171,7 +167,7 @@ class _EmailVerificationScreenState
       _startTimer();
       _showSnack('New code sent to your email', AppColors.statusConfirmed);
     } catch (e) {
-      _showSnack('Failed to resend code', Colors.red);
+      _showSnack(friendlyAuthError(e), AppColors.statusCancelled);
     }
 
     setState(() => _isResending = false);
@@ -181,7 +177,7 @@ class _EmailVerificationScreenState
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
       ),
@@ -191,185 +187,211 @@ class _EmailVerificationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Verify Email'),
-        backgroundColor: AppColors.darkNavy,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.goldAccent.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 88,
+                height: 88,
+                decoration: const BoxDecoration(
+                  color: AppColors.primarySoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mark_email_unread,
+                  size: 42,
+                  color: AppColors.primary,
+                ),
               ),
-              child: const Icon(
-                Icons.mark_email_unread,
-                size: 40,
-                color: AppColors.goldAccent,
+              const SizedBox(height: 24),
+              Text(
+                _isReservationVerification
+                    ? 'Confirm your reservation'
+                    : 'Check your email',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _isReservationVerification
-                  ? 'Confirm your reservation'
-                  : 'Check your email',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _isReservationVerification
-                  ? 'We sent a 6-digit code to\n${widget.email}\nto confirm your room reservation.'
-                  : 'We sent a 6-digit code to\n${widget.email}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                height: 1.5,
+              const SizedBox(height: 8),
+              Text(
+                _isReservationVerification
+                    ? 'We sent a 6-digit code to\n${widget.email}\nto confirm your room reservation.'
+                    : 'We sent a 6-digit code to\n${widget.email}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
               ),
-            ),
-            const SizedBox(height: 32),
-            Form(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(6, (index) {
-                  return SizedBox(
-                    width: 48,
-                    height: 56,
-                    child: TextFormField(
-                      controller: _otpControllers[index],
-                      focusNode: _focusNodes[index],
-                      textAlign: TextAlign.center,
-                      keyboardType: TextInputType.text,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(1),
-                      ],
-                      autofocus: index == 0,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                      cursorColor: AppColors.darkNavy,
-                      textAlignVertical: TextAlignVertical.center,
-                      decoration: InputDecoration(
-                        counterText: '',
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+              const SizedBox(height: 32),
+              Form(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(6, (index) {
+                    return SizedBox(
+                      width: 48,
+                      height: 58,
+                      child: TextFormField(
+                        controller: _otpControllers[index],
+                        focusNode: _focusNodes[index],
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(1),
+                        ],
+                        autofocus: index == 0,
+                        // Explicit monospace fontFamily: the app's default
+                        // font (Google Fonts "Inter") is fetched async on
+                        // web, and if a digit is typed before the web font
+                        // finishes loading, CanvasKit can render the wrong
+                        // glyph (digits showing up as punctuation-looking
+                        // symbols). Monospace is a system font that's always
+                        // available immediately, so the code is guaranteed
+                        // to be legible.
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                          fontFamily: 'monospace',
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: AppColors.darkNavy,
-                            width: 2,
+                        cursorColor: AppColors.primary,
+                        textAlignVertical: TextAlignVertical.center,
+                        decoration: InputDecoration(
+                          counterText: '',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.lightGray2, width: 1.5),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.lightGray2, width: 1.5),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
                           ),
                         ),
+                        onChanged: (value) {
+                          if (value.isNotEmpty && index < 5) {
+                            _focusNodes[index + 1].requestFocus();
+                          }
+                          if (value.isEmpty && index > 0) {
+                            _focusNodes[index - 1].requestFocus();
+                          }
+                        },
                       ),
-                      onChanged: (value) {
-                        if (value.isNotEmpty && index < 5) {
-                          _focusNodes[index + 1].requestFocus();
-                        }
-                        if (value.isEmpty && index > 0) {
-                          _focusNodes[index - 1].requestFocus();
-                        }
-                      },
-                    ),
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isVerifying ? null : _verifyOtp,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.goldAccent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 4,
+                    );
+                  }),
                 ),
-                child: _isVerifying
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isVerifying ? null : _verifyOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+                    elevation: 0,
+                  ),
+                  child: _isVerifying
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _isReservationVerification
+                              ? 'Confirm Reservation'
+                              : 'Verify & Continue',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Code expires in $_formattedTime',
+                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _isResending || _secondsRemaining > 0
+                    ? null
+                    : _resendOtp,
+                child: _isResending
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(
-                        _isReservationVerification
-                            ? 'Confirm Reservation'
-                            : 'Verify & Continue',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        _secondsRemaining > 0
+                            ? 'Resend code in $_formattedTime'
+                            : 'Resend code',
+                        style: TextStyle(
+                          color: _secondsRemaining > 0
+                              ? AppColors.textTertiary
+                              : AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
                         ),
                       ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Code expires in $_formattedTime',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: _isResending || _secondsRemaining > 0
-                  ? null
-                  : _resendOtp,
-              child: _isResending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      _secondsRemaining > 0
-                          ? 'Resend code in $_formattedTime'
-                          : 'Resend code',
-                      style: TextStyle(
-                        color: _secondsRemaining > 0
-                            ? Colors.grey
-                            : AppColors.darkNavy,
-                        fontWeight: FontWeight.w600,
+              const SizedBox(height: 28),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, size: 20, color: AppColors.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Please check your inbox and spam folder for the verification code.',
+                        style: TextStyle(fontSize: 12.5, color: AppColors.textPrimary.withValues(alpha: 0.8)),
                       ),
                     ),
-            ),
-            const SizedBox(height: 32),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.lightGray,
-                borderRadius: BorderRadius.circular(12),
+                  ],
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, size: 20, color: AppColors.textSecondary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Please check your inbox and spam folder for the verification code.',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

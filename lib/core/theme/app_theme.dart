@@ -83,15 +83,18 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.lightGray2, width: 1),
         ),
         color: AppColors.cardLight,
         surfaceTintColor: Colors.transparent,
+        margin: EdgeInsets.zero,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.darkNavy,
+          backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
           shape: RoundedRectangleBorder(
@@ -102,7 +105,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.darkNavy,
+          foregroundColor: AppColors.textPrimary,
           side: const BorderSide(color: AppColors.lightGray2, width: 1),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           shape: RoundedRectangleBorder(
@@ -113,9 +116,27 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.goldAccent,
+          foregroundColor: AppColors.primary,
           textStyle: AppTypography.button,
         ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: Colors.white,
+        selectedColor: AppColors.primary,
+        disabledColor: AppColors.lightGray,
+        labelStyle: AppTypography.captionMedium.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        secondaryLabelStyle: AppTypography.captionMedium.copyWith(
+          color: Colors.white,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+          side: const BorderSide(color: AppColors.lightGray2),
+        ),
+        side: const BorderSide(color: AppColors.lightGray2),
+        showCheckmark: false,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -131,7 +152,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.darkNavy, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         labelStyle: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         hintStyle: AppTypography.caption.copyWith(color: AppColors.textTertiary),
@@ -144,7 +165,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: AppColors.darkNavy,
+        backgroundColor: AppColors.textPrimary,
       ),
     );
   }

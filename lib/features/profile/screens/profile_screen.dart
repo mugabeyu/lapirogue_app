@@ -7,10 +7,40 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/services/activity_service.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/reservation_provider.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final _ecoService = EcoPointsService();
+  int _ecoPoints = 0;
+  double _carbonOffsetKg = 0;
+  bool _statsLoaded = false;
+  String? _statsGuestId;
+
+  Future<void> _loadStats(String guestId) async {
+    if (_statsGuestId == guestId && _statsLoaded) return;
+    _statsGuestId = guestId;
+    final balance = await _ecoService.getEcoPointsBalance(guestId);
+    final transactions = await _ecoService.getTransactions(guestId);
+    final totalOffset = transactions.fold<double>(
+      0,
+      (sum, t) => sum + (t.carbonOffsetKg ?? 0),
+    );
+    if (!mounted) return;
+    setState(() {
+      _ecoPoints = balance;
+      _carbonOffsetKg = totalOffset;
+      _statsLoaded = true;
+    });
+  }
 
   void _showPhotoOptions(BuildContext context, WidgetRef ref, String guestId) {
     showModalBottomSheet(
@@ -27,7 +57,7 @@ class ProfileScreen extends ConsumerWidget {
               const Text('Profile Photo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.darkNavy),
+                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
                 title: const Text('Take Photo'),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -35,7 +65,7 @@ class ProfileScreen extends ConsumerWidget {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: AppColors.darkNavy),
+                leading: const Icon(Icons.photo_library, color: AppColors.primary),
                 title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -78,7 +108,12 @@ class ProfileScreen extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), behavior: SnackBarBehavior.floating));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('We couldn\'t update your photo. Please try again.', style: TextStyle(fontWeight: FontWeight.w600)),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -92,13 +127,18 @@ class ProfileScreen extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), behavior: SnackBarBehavior.floating));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('We couldn\'t remove your photo. Please try again.', style: TextStyle(fontWeight: FontWeight.w600)),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
 
     if (!authState.isAuthenticated) {
@@ -120,7 +160,7 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () => context.push('/login'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.darkNavy, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                   child: const Text('Login'),
                 ),
                 const SizedBox(height: 12),
@@ -137,156 +177,163 @@ class ProfileScreen extends ConsumerWidget {
     }
 
     final guest = authState.guest!;
+    final reservationState = ref.watch(reservationProvider);
+    final activeStaysCount = reservationState.reservations
+        .where((r) => ['RESERVED', 'CONFIRMED', 'CHECKED_IN'].contains(r.status.toUpperCase()))
+        .length;
+
+    _loadStats(guest.id);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            backgroundColor: AppColors.darkNavy,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.darkNavy, AppColors.darkNavyDark],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(height: 56),
-                        GestureDetector(
-                          onTap: () => _showPhotoOptions(context, ref, guest.id),
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: 88, height: 88,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 3),
-                                  image: guest.imagePath != null
-                                      ? DecorationImage(image: NetworkImage(guest.imagePath!), fit: BoxFit.cover)
-                                      : null,
-                                  color: AppColors.goldAccent,
-                                ),
-                                child: guest.imagePath == null
-                                    ? Center(child: Text('${guest.firstName[0]}${guest.lastName[0]}', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w600)))
-                                    : null,
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Profile'),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          // ── Avatar + name + status ──
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => _showPhotoOptions(context, ref, guest.id),
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: guest.imagePath != null
+                            ? DecorationImage(image: NetworkImage(guest.imagePath!), fit: BoxFit.cover)
+                            : null,
+                        color: AppColors.primary,
+                      ),
+                      child: guest.imagePath == null
+                          ? Center(
+                              child: Text(
+                                '${guest.firstName[0]}${guest.lastName[0]}',
+                                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
                               ),
-                              Positioned(
-                                bottom: 0, right: 0,
-                                child: Container(
-                                  width: 28, height: 28,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.darkNavy,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                  ),
-                                  child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            guest.fullName,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text('Guest ID: ${guest.guestId}', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13)),
-                        const SizedBox(height: 12),
-                        _buildStatusBadge(guest),
-                      ],
+                            )
+                          : null,
                     ),
-                  ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(Icons.camera_alt, size: 11, color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(guest.fullName, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(guest.email, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    const SizedBox(height: 6),
+                    _buildStatusBadge(guest),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // ── Stats row ──
+          Row(
+            children: [
+              Expanded(child: _StatBox(value: _statsLoaded ? '$_ecoPoints' : '—', label: 'Eco-Points')),
+              const SizedBox(width: 10),
+              Expanded(child: _StatBox(value: '$activeStaysCount', label: 'Active stays')),
+              const SizedBox(width: 10),
+              Expanded(child: _StatBox(value: _statsLoaded ? '${_carbonOffsetKg.toStringAsFixed(0)}kg' : '—', label: 'CO₂ offset')),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildSection('Quick links', [
+            _buildMenuItem(Icons.calendar_today_outlined, 'My reservations', () => context.push('/reservations')),
+            _buildMenuItem(Icons.receipt_long_outlined, 'Payments & billing', () => context.push('/payments')),
+            _buildMenuItem(Icons.notifications_outlined, 'Notifications', () => context.push('/notifications')),
+            _buildMenuItem(Icons.info_outline, 'Hotel information', () => context.push('/hotel-info')),
+            _buildMenuItem(Icons.lock_outline, 'Update password', () => context.push('/update-password')),
+            _buildMenuItem(Icons.star_outline, 'Leave a review', () => context.push('/feedback')),
+            _buildMenuItem(Icons.help_outline, 'Help & support', () => context.push('/help')),
+          ]),
+          const SizedBox(height: 12),
+          _buildSection('Personal details', [
+            _buildRow(Icons.person_outline, 'First Name', guest.firstName),
+            _buildRow(Icons.person_outline, 'Last Name', guest.lastName),
+            _buildRow(Icons.flag_outlined, 'Nationality', guest.nationality ?? 'Not provided'),
+            _buildRow(Icons.cake_outlined, 'Date of Birth', guest.dateOfBirth != null ? DateFormat('MMM dd, yyyy').format(guest.dateOfBirth!) : 'Not provided'),
+            _buildRow(Icons.assignment_outlined, 'Passport / ID', guest.passport ?? 'Not provided'),
+          ]),
+          const SizedBox(height: 12),
+          _buildSection('Contact', [
+            _buildRow(Icons.email_outlined, 'Email', guest.email),
+            _buildRow(Icons.phone_outlined, 'Phone', guest.phone ?? 'Not provided'),
+            _buildRow(Icons.home_outlined, 'Home Address', guest.homeAddress ?? 'Not provided'),
+          ]),
+          const SizedBox(height: 12),
+          _buildSection('Account', [
+            _buildRow(Icons.qr_code, 'Guest ID', guest.guestId),
+            _buildRow(Icons.badge_outlined, 'Status', guest.status),
+            _buildRow(Icons.shield_outlined, 'Account Status', guest.accountStatus),
+            _buildRow(Icons.person_pin_outlined, 'Registered by', guest.createdByName ?? 'Self'),
+            _buildRow(Icons.calendar_month_outlined, 'Member Since', guest.createdAt != null ? DateFormat('MMM dd, yyyy').format(guest.createdAt!) : 'N/A'),
+          ]),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    title: const Text('Sign Out'),
+                    content: const Text('Are you sure you want to sign out?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          ref.read(authStateProvider.notifier).logout();
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.statusCancelled, foregroundColor: Colors.white),
+                        child: const Text('Sign Out'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              icon: const Icon(Icons.logout, size: 18),
+              label: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.statusCancelled,
+                side: const BorderSide(color: AppColors.lightGray2),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Column(
-                children: [
-                  _buildSection('Personal Details', [
-                    _buildRow(Icons.person_outline, 'First Name', guest.firstName),
-                    _buildRow(Icons.person_outline, 'Last Name', guest.lastName),
-                    _buildRow(Icons.flag_outlined, 'Nationality', guest.nationality ?? 'Not provided'),
-                    _buildRow(Icons.cake_outlined, 'Date of Birth', guest.dateOfBirth != null ? DateFormat('MMM dd, yyyy').format(guest.dateOfBirth!) : 'Not provided'),
-                    _buildRow(Icons.assignment_outlined, 'Passport / ID', guest.passport ?? 'Not provided'),
-                  ]),
-                  const SizedBox(height: 12),
-                  _buildSection('Contact', [
-                    _buildRow(Icons.email_outlined, 'Email', guest.email),
-                    _buildRow(Icons.phone_outlined, 'Phone', guest.phone ?? 'Not provided'),
-                    _buildRow(Icons.home_outlined, 'Home Address', guest.homeAddress ?? 'Not provided'),
-                  ]),
-                  const SizedBox(height: 12),
-                  _buildSection('Account', [
-                    _buildRow(Icons.qr_code, 'Guest ID', guest.guestId),
-                    _buildRow(Icons.badge_outlined, 'Status', guest.status),
-                    _buildRow(Icons.shield_outlined, 'Account Status', guest.accountStatus),
-                    _buildRow(Icons.person_pin_outlined, 'Registered by', guest.createdByName ?? 'Self'),
-                    _buildRow(Icons.calendar_month_outlined, 'Member Since', guest.createdAt != null ? DateFormat('MMM dd, yyyy').format(guest.createdAt!) : 'N/A'),
-                  ]),
-                  const SizedBox(height: 12),
-                  _buildSection('Quick Actions', [
-                    _buildMenuItem(Icons.star_outline, 'Leave a Review', () => context.push('/feedback')),
-                    _buildMenuItem(Icons.info_outline, 'Hotel Information', () => context.push('/hotel-info')),
-                  ]),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            title: const Text('Sign Out'),
-                            content: const Text('Are you sure you want to sign out?'),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.of(ctx).pop();
-                                  ref.read(authStateProvider.notifier).logout();
-                                },
-                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.statusCancelled, foregroundColor: Colors.white),
-                                child: const Text('Sign Out'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.statusCancelled,
-                        side: const BorderSide(color: AppColors.statusCancelled),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
+          const SizedBox(height: 12),
+          const Center(
+            child: Text('La Pirogue Guest App', style: TextStyle(fontSize: 12, color: AppColors.textTertiary)),
           ),
         ],
       ),
@@ -301,7 +348,7 @@ class ProfileScreen extends ConsumerWidget {
       case 'CHECKED_IN':
         statusColor = AppColors.statusConfirmed;
       case 'CHECKED_OUT':
-        statusColor = AppColors.textTertiary;
+        statusColor = AppColors.statusNeutral;
       default:
         statusColor = AppColors.statusPending;
     }
@@ -311,32 +358,30 @@ class ProfileScreen extends ConsumerWidget {
       children: [
         if (isVip)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            margin: const EdgeInsets.only(right: 6),
             decoration: BoxDecoration(
-              color: AppColors.goldAccent.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.4)),
+              color: AppColors.statusPendingBg,
+              borderRadius: BorderRadius.circular(999),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.star, size: 14, color: AppColors.goldAccent),
-                const SizedBox(width: 4),
-                Text('VIP', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.goldAccent)),
+                Icon(Icons.star, size: 12, color: AppColors.statusPending),
+                const SizedBox(width: 3),
+                Text('VIP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.statusPending)),
               ],
             ),
           ),
-        if (isVip) const SizedBox(width: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: statusColor.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: statusColor.withValues(alpha: 0.5)),
+            color: statusColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
             status.replaceAll('_', ' '),
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor),
           ),
         ),
       ],
@@ -347,10 +392,8 @@ class ProfileScreen extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightGray2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,6 +403,7 @@ class ProfileScreen extends ConsumerWidget {
             child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 0.3)),
           ),
           ...children,
+          const SizedBox(height: 4),
         ],
       ),
     );
@@ -374,10 +418,10 @@ class ProfileScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.darkNavy.withValues(alpha: 0.08),
+              color: AppColors.lightGray,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: AppColors.darkNavy),
+            child: Icon(icon, size: 18, color: AppColors.primary),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -400,15 +444,40 @@ class ProfileScreen extends ConsumerWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.darkNavy.withValues(alpha: 0.08),
+          color: AppColors.lightGray,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, size: 18, color: AppColors.darkNavy),
+        child: Icon(icon, size: 18, color: AppColors.primary),
       ),
       title: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
       trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+}
+
+class _StatBox extends StatelessWidget {
+  final String value;
+  final String label;
+  const _StatBox({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.lightGray2),
+      ),
+      child: Column(
+        children: [
+          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary), textAlign: TextAlign.center),
+        ],
+      ),
     );
   }
 }

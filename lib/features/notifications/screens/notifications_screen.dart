@@ -102,7 +102,13 @@ class NotificationsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading notifications: $e')),
+        error: (e, _) => const Center(
+          child: Text(
+            'We couldn\'t load your notifications. Pull down to try again.',
+            style: TextStyle(fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }

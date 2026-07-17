@@ -117,18 +117,20 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Book a Room'),
-        backgroundColor: AppColors.darkNavy,
-        foregroundColor: Colors.white,
+        title: const Text('Rooms & Suites'),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
       ),
       body: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+              border: Border(bottom: BorderSide(color: AppColors.lightGray2)),
             ),
             child: Column(
               children: [
@@ -156,10 +158,10 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                         : const Icon(Icons.search, size: 20),
                     label: Text(_isLoadingRooms ? 'Searching...' : 'Check Availability'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.goldAccent,
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
@@ -180,9 +182,9 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.lightGray,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: AppColors.lightGray2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +194,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.calendar_today, size: 14, color: AppColors.darkNavy),
+                Icon(Icons.calendar_today, size: 14, color: AppColors.primary),
                 const SizedBox(width: 6),
                 Text(
                   DateFormat('MMM dd').format(date),
@@ -300,23 +302,39 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
+          border: Border.all(color: AppColors.lightGray2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: SizedBox(
-                height: 180,
-                width: double.infinity,
-                child: CachedNetworkImage(
-                  imageUrl: room.imagePath ?? '',
-                  fit: BoxFit.cover,
-                  placeholder: (_, _) => Container(color: Colors.grey[200]),
-                  errorWidget: (_, _, _) => Container(color: AppColors.lightGray, child: const Icon(Icons.image, size: 48, color: AppColors.textTertiary)),
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: SizedBox(
+                    height: 180,
+                    width: double.infinity,
+                    child: CachedNetworkImage(
+                      imageUrl: room.imagePath ?? '',
+                      fit: BoxFit.cover,
+                      placeholder: (_, _) => Container(color: Colors.grey[200]),
+                      errorWidget: (_, _, _) => Container(color: AppColors.lightGray, child: const Icon(Icons.image, size: 48, color: AppColors.textTertiary)),
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(room.type, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                  ),
+                ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -324,31 +342,37 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.goldAccent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Room ${room.roomNumber}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 2),
+                            Text(room.type, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                          ],
                         ),
-                        child: Text(room.type, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.goldAccent)),
                       ),
-                      const Spacer(),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('MUR ${NumberFormat('#,###').format(room.price.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.darkNavy)),
-                          Text('per night', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                          Text('MUR ${NumberFormat('#,###').format(room.price.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimary)),
+                          Text('per night', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                         ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text(room.roomNumber, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  Text('Up to ${room.capacity} guests', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                  Row(
+                    children: [
+                      const Icon(Icons.people_outline, size: 15, color: AppColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text('Up to ${room.capacity} guests', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    ],
+                  ),
                   if (room.amenities.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Wrap(
                       spacing: 6, runSpacing: 4,
                       children: room.amenities.take(3).map((a) => Container(
@@ -357,7 +381,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                           color: AppColors.lightGray,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(a, style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                        child: Text(a, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                       )).toList(),
                     ),
                   ],
@@ -365,14 +389,14 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.darkNavy.withValues(alpha: 0.05),
+                      color: AppColors.primarySoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('$nights nights', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                        Text('MUR ${NumberFormat('#,###').format(totalPrice.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.darkNavy)),
+                        Text('$nights nights', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        Text('MUR ${NumberFormat('#,###').format(totalPrice.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.primary)),
                       ],
                     ),
                   ),

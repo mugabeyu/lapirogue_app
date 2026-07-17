@@ -10,6 +10,7 @@ import '../../../data/providers/hotel_provider.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/booking_card.dart';
 import '../widgets/current_stay_card.dart';
+import '../widgets/quick_actions_row.dart';
 import '../widgets/room_card.dart';
 import '../widgets/activity_card.dart';
 import '../widgets/food_card.dart';
@@ -46,23 +47,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               firstName: authState.guest?.firstName,
             ),
           ),
-          if (!hasActive)
-            SliverToBoxAdapter(
-              child: Transform.translate(
-                offset: const Offset(0, -20),
-                child: BookingCard(
-                  checkIn: _checkIn,
-                  checkOut: _checkOut,
-                  onCheckInChanged: (d) => setState(() => _checkIn = d),
-                  onCheckOutChanged: (d) => setState(() => _checkOut = d),
-                  onSearch: () => context.push('/rooms'),
-                ),
-              ),
+          SliverToBoxAdapter(
+            child: BookingCard(
+              checkIn: _checkIn,
+              checkOut: _checkOut,
+              onCheckInChanged: (d) => setState(() => _checkIn = d),
+              onCheckOutChanged: (d) => setState(() => _checkOut = d),
+              onSearch: () => context.push('/rooms'),
             ),
+          ),
           if (hasActive && reservation != null)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 20),
                 child: CurrentStayCard(
                   reservation: reservation,
                   roomNumber: reservation.room?.roomNumber ?? 'Room ${reservation.roomId ?? ''}',
@@ -70,6 +67,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(top: 20),
+              child: QuickActionsRow(),
+            ),
+          ),
 SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),

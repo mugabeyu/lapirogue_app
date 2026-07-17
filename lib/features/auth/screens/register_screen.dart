@@ -55,7 +55,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final error = ref.read(authStateProvider).error;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error ?? 'Registration failed'),
+          content: Text(
+            error ?? 'We couldn\'t create your account. Please try again.',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           backgroundColor: AppColors.statusCancelled,
           behavior: SnackBarBehavior.floating,
         ),

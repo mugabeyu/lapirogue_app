@@ -101,8 +101,8 @@ class _SpaScreenState extends ConsumerState<SpaScreen> {
                                 borderRadius: BorderRadius.circular(20),
                                 gradient: LinearGradient(
                                   colors: [
-                                    const Color(0xFF9C27B0).withValues(alpha: 0.6),
-                                    const Color(0xFF7B1FA2),
+                                    AppColors.primaryLight.withValues(alpha: 0.85),
+                                    AppColors.primaryDark,
                                   ],
                                 ),
                               ),
@@ -300,7 +300,7 @@ class _SpaScreenState extends ConsumerState<SpaScreen> {
                   child: ElevatedButton(
                     onPressed: () => _bookTreatment(treatment),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9C27B0),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(

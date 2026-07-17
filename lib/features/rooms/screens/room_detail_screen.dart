@@ -183,8 +183,8 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
       debugPrint('Booking completely failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Booking failed: $e'),
+        const SnackBar(
+          content: Text('We couldn\'t complete your booking. Please try again.', style: TextStyle(fontWeight: FontWeight.w600)),
           backgroundColor: AppColors.statusCancelled,
           behavior: SnackBarBehavior.floating,
         ),
@@ -355,30 +355,33 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                   ],
                   const Text(
                     'Amenities',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 4.2,
                     children: room.amenities
                         .map(
-                          (amenity) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.lightGray,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              amenity,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                          (amenity) => Row(
+                            children: [
+                              const Icon(Icons.check, size: 18, color: AppColors.primary),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  amenity,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         )
                         .toList(),

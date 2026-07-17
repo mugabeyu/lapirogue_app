@@ -200,8 +200,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Booking failed: $e'),
+          const SnackBar(
+            content: Text('We couldn\'t complete your booking. Please try again.', style: TextStyle(fontWeight: FontWeight.w600)),
             backgroundColor: AppColors.statusCancelled,
           ),
         );
@@ -367,14 +367,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.lightGray2),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,7 +376,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     if (item.imagePath != null && item.imagePath!.isNotEmpty)
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(26),
+                          top: Radius.circular(16),
                         ),
                         child: SizedBox(
                           height: 200,
@@ -410,7 +404,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.lightGray,
                           borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(26),
+                            top: Radius.circular(16),
                           ),
                         ),
                         child: Center(
@@ -477,14 +471,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.lightGray2),
                 ),
                 child: Column(
                   children: [
@@ -517,7 +505,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(26),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -619,44 +607,63 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isSubmitting ? null : _submitBooking,
-                icon: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Icon(_confirmIcon(), size: 20),
-                label: Text(
-                  _isSubmitting ? 'Processing...' : _confirmLabel(),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.goldAccent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  elevation: 2,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 100),
           ],
         ),
       ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: AppColors.lightGray2)),
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isSubmitting ? null : _submitBooking,
+              icon: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(_confirmIcon(), size: 20),
+              label: Text(
+                _isSubmitting
+                    ? 'Processing...'
+                    : _isCustom
+                        ? _confirmLabel()
+                        : '${_confirmLabel()} · MUR ${_totalPrice.toStringAsFixed(0)}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  double get _totalPrice {
+    final item = widget.item;
+    final usesParticipants = item.type == BookingType.activity ||
+        item.type == BookingType.spa;
+    return item.price * (usesParticipants ? _participants : _quantity);
   }
 
   Widget _buildTextField({

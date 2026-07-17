@@ -27,15 +27,34 @@ class ReservationsScreen extends ConsumerWidget {
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'CHECKED_IN':
-        return AppColors.statusConfirmed;
+        return AppColors.statusInfo;
       case 'RESERVED':
       case 'CONFIRMED':
-        return AppColors.darkNavy;
+        return AppColors.statusConfirmed;
+      case 'CHECKED_OUT':
+        return AppColors.statusNeutral;
       case 'CANCELLED':
       case 'NO_SHOW':
         return AppColors.statusCancelled;
       default:
-        return Colors.grey;
+        return AppColors.statusPending;
+    }
+  }
+
+  Color _getStatusBgColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'CHECKED_IN':
+        return AppColors.statusInfoBg;
+      case 'RESERVED':
+      case 'CONFIRMED':
+        return AppColors.statusConfirmedBg;
+      case 'CHECKED_OUT':
+        return AppColors.statusNeutralBg;
+      case 'CANCELLED':
+      case 'NO_SHOW':
+        return AppColors.statusCancelledBg;
+      default:
+        return AppColors.statusPendingBg;
     }
   }
 
@@ -64,8 +83,11 @@ class ReservationsScreen extends ConsumerWidget {
       return Scaffold(
         appBar: AppBar(
           title: const Text('My Reservations'),
-          backgroundColor: AppColors.darkNavy,
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
         ),
+        backgroundColor: AppColors.background,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -102,8 +124,11 @@ class ReservationsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Reservations'),
-        backgroundColor: AppColors.darkNavy,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
       ),
+      backgroundColor: AppColors.background,
       body: FutureBuilder<String?>(
         future: SessionService.getCurrentGuestId(),
         builder: (context, guestIdSnapshot) {
@@ -186,36 +211,38 @@ class ReservationsScreen extends ConsumerWidget {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
+                      side: const BorderSide(color: AppColors.lightGray2),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(reservation.status),
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
-                            ),
-                          ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                reservation.status,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
                                 'Ref: ${shortRef(reservation.reservationId)}',
                                 style: const TextStyle(
-                                  color: Colors.white70,
+                                  color: AppColors.textSecondary,
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getStatusBgColor(reservation.status),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  reservation.status,
+                                  style: TextStyle(
+                                    color: _getStatusColor(reservation.status),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],

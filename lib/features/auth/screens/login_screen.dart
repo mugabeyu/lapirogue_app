@@ -223,14 +223,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.15),
+                      color: AppColors.statusCancelled.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
                         const Icon(
                           Icons.error_outline,
-                          color: Colors.red,
+                          color: AppColors.statusCancelled,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -238,8 +238,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Text(
                             authState.error!,
                             style: const TextStyle(
-                              color: Colors.red,
+                              color: AppColors.statusCancelled,
                               fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),

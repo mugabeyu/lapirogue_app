@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/models/reservation.dart';
 
 class CurrentStayCard extends StatelessWidget {
@@ -16,78 +18,139 @@ class CurrentStayCard extends StatelessWidget {
     this.roomImage,
   });
 
+  String get _statusLabel {
+    switch (reservation.status) {
+      case 'CHECKED_IN':
+        return 'Checked In';
+      case 'RESERVED':
+      case 'CONFIRMED':
+        return 'Reserved';
+      case 'CHECKED_OUT':
+      case 'COMPLETED':
+        return 'Checked Out';
+      case 'CANCELLED':
+        return 'Cancelled';
+      default:
+        return reservation.status;
+    }
+  }
+
+  Color get _statusColor {
+    switch (reservation.status) {
+      case 'CHECKED_IN':
+        return AppColors.statusInfo;
+      case 'CANCELLED':
+        return AppColors.statusCancelled;
+      default:
+        return AppColors.statusPending;
+    }
+  }
+
+  Color get _statusBgColor {
+    switch (reservation.status) {
+      case 'CHECKED_IN':
+        return AppColors.statusInfoBg;
+      case 'CANCELLED':
+        return AppColors.statusCancelledBg;
+      default:
+        return AppColors.statusPendingBg;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final nights = reservation.checkOut.difference(reservation.checkIn).inDays;
     final checkInStr = DateFormat('MMM dd').format(reservation.checkIn);
     final checkOutStr = DateFormat('MMM dd').format(reservation.checkOut);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Your current stay', style: AppTypography.cardTitle),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _statusBgColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  _statusLabel,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _statusColor),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: SizedBox(
-              height: 140,
-              width: double.infinity,
-              child: roomImage != null && roomImage!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: roomImage!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, _) => Container(color: AppColors.lightGray),
-                      errorWidget: (_, _, _) => Container(color: AppColors.lightGray, child: const Icon(Icons.image, color: AppColors.textTertiary)),
-                    )
-                  : Container(color: AppColors.lightGray, child: const Icon(Icons.image, color: AppColors.textTertiary)),
+        ),
+        GestureDetector(
+          onTap: () => context.push('/my-stay'),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.lightGray2),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Stack(
                   children: [
-                    Text(roomNumber, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.statusConfirmed.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                    SizedBox(
+                      height: 130,
+                      width: double.infinity,
+                      child: roomImage != null && roomImage!.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: roomImage!,
+                              fit: BoxFit.cover,
+                              placeholder: (_, _) => Container(color: AppColors.lightGray),
+                              errorWidget: (_, _, _) => Container(color: AppColors.lightGray, child: const Icon(Icons.image, color: AppColors.textTertiary)),
+                            )
+                          : Container(color: AppColors.lightGray, child: const Icon(Icons.image, color: AppColors.textTertiary)),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(14, 20, 14, 10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.black.withValues(alpha: 0), Colors.black.withValues(alpha: 0.55)],
+                          ),
+                        ),
+                        child: Text(
+                          roomNumber,
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                        ),
                       ),
-                      child: const Text('Checked In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.statusConfirmed)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_month_outlined, size: 14, color: AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Text('$checkInStr \u2013 $checkOutStr \u00b7 $nights nights', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                    const SizedBox(width: 12),
-                    Icon(Icons.people_outlined, size: 14, color: AppColors.textSecondary),
-                    const SizedBox(width: 4),
-                    Text('${reservation.adults + reservation.children} guests', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_month_outlined, size: 14, color: AppColors.textSecondary),
+                      const SizedBox(width: 6),
+                      Text('$checkInStr \u2013 $checkOutStr \u00b7 $nights nights', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      const Spacer(),
+                      const Icon(Icons.arrow_forward, size: 16, color: AppColors.primary),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
-  }}
+  }
+}

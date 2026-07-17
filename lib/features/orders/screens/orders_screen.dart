@@ -54,9 +54,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Color _statusColor(String status) {
     switch (status) {
       case 'PENDING':
-        return Colors.orange;
+        return AppColors.statusPending;
       case 'PREPARING':
-        return Colors.blue;
+        return AppColors.statusInfo;
       case 'SERVED':
         return AppColors.statusConfirmed;
       case 'CANCELLED':
@@ -185,17 +185,11 @@ class _OrderCardState extends State<_OrderCard> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightGray2),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         onTap: () => setState(() => _expanded = !_expanded),
         child: Padding(
           padding: const EdgeInsets.all(16),

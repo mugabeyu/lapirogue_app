@@ -8,6 +8,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/reservation_gate.dart';
 import '../../../core/models/menu_item.dart';
+import '../../../core/models/food_order.dart';
+import '../../../core/services/session_service.dart';
 import '../../booking/screens/booking_screen.dart';
 
 class DiningScreen extends ConsumerStatefulWidget {
@@ -22,10 +24,14 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
   bool _isLoading = true;
   String _selectedCategory = 'All';
 
+  FoodOrder? _activeOrder;
+  bool _loadingActiveOrder = true;
+
   @override
   void initState() {
     super.initState();
     _loadMenu();
+    _loadActiveOrder();
   }
 
   Future<void> _loadMenu() async {
@@ -46,6 +52,33 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadActiveOrder() async {
+    try {
+      final guest = await SessionService.getCurrentGuest();
+      if (guest == null) {
+        if (mounted) setState(() => _loadingActiveOrder = false);
+        return;
+      }
+      final response = await Supabase.instance.client
+          .from('food_orders')
+          .select('*')
+          .eq('guest_id', guest['id'])
+          .inFilter('status', ['PENDING', 'PREPARING'])
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (mounted) {
+        setState(() {
+          _activeOrder = response != null ? FoodOrder.fromJson(response) : null;
+          _loadingActiveOrder = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loadingActiveOrder = false);
     }
   }
 
@@ -70,7 +103,7 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
 
   Future<void> _orderItem(MenuItem item) async {
     if (!mounted) return;
-    context.push(
+    await context.push(
       '/booking',
       extra: BookingItem(
         type: BookingType.dining,
@@ -82,6 +115,7 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
         description: item.description,
       ),
     );
+    if (mounted) _loadActiveOrder();
   }
 
   @override
@@ -92,86 +126,45 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
       checkInLockedMessage:
           'Our restaurant menus will be available once you check in.',
       child: Scaffold(
+        backgroundColor: AppColors.background,
         appBar: AppBar(
           title: const Text('Dining'),
-          backgroundColor: AppColors.darkNavy,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
           actions: [
-            TextButton.icon(
-              onPressed: () => context.push('/orders'),
-              icon: const Icon(Icons.receipt_outlined, size: 18, color: Colors.white),
-              label: const Text(
-                'My Orders',
-                style: TextStyle(color: Colors.white, fontSize: 13),
-              ),
+            IconButton(
+              onPressed: () => context.push('/orders').then((_) => _loadActiveOrder()),
+              icon: const Icon(Icons.receipt_long_outlined),
+              tooltip: 'My Orders',
             ),
+            const SizedBox(width: 4),
           ],
         ),
-        backgroundColor: AppColors.surfaceLight,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _menuItems.isEmpty
             ? const Center(child: Text('No menu items available'))
             : RefreshIndicator(
-                onRefresh: _loadMenu,
+                onRefresh: () async {
+                  await _loadMenu();
+                  await _loadActiveOrder();
+                },
                 child: CustomScrollView(
                   slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(28),
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.goldAccent,
-                                AppColors.darkNavy,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Dining at your fingertips',
-                                style: AppTypography.sectionTitle.copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Explore the full menu by category, review images and descriptions, and place in-stay orders once you are checked in.',
-                                style: AppTypography.caption.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.84),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: [
-                                  _DiningStatPill(
-                                    label: '${_menuItems.length} items',
-                                    icon: Icons.restaurant_menu,
-                                  ),
-                                  _DiningStatPill(
-                                    label:
-                                        '${_categories.length - 1} categories',
-                                    icon: Icons.category_outlined,
-                                  ),
-                                ],
-                              ),
-                            ],
+                    if (!_loadingActiveOrder && _activeOrder != null)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          child: _ActiveOrderCard(
+                            order: _activeOrder!,
+                            onTap: () => context.push('/orders').then((_) => _loadActiveOrder()),
                           ),
                         ),
                       ),
-                    ),
                     SliverToBoxAdapter(
                       child: SizedBox(
-                        height: 64,
+                        height: 56,
                         child: ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
                           scrollDirection: Axis.horizontal,
@@ -184,17 +177,13 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                               onSelected: (_) =>
                                   setState(() => _selectedCategory = category),
                               labelStyle: TextStyle(
-                                color: selected
-                                    ? Colors.white
-                                    : AppColors.darkNavy,
+                                color: selected ? Colors.white : AppColors.textPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                               backgroundColor: Colors.white,
-                              selectedColor: AppColors.darkNavy,
+                              selectedColor: AppColors.primary,
                               side: BorderSide(
-                                color: selected
-                                    ? AppColors.darkNavy
-                                    : AppColors.lightGray2,
+                                color: selected ? AppColors.primary : AppColors.lightGray2,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(999),
@@ -213,21 +202,11 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                entry.key,
-                                style: AppTypography.cardTitle,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '${entry.value.length} ${entry.value.length == 1 ? 'dish' : 'dishes'} available',
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 14),
+                              Text(entry.key, style: AppTypography.cardTitle),
+                              const SizedBox(height: 12),
                               ...entry.value.map(
                                 (item) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.only(bottom: 12),
                                   child: _DiningCard(
                                     item: item,
                                     onOrder: () => _orderItem(item),
@@ -240,14 +219,121 @@ class _DiningScreenState extends ConsumerState<DiningScreen> {
                       ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
-        ),
+                  ],
+                ),
+              ),
       ),
-    ),
     );
   }
 }
 
+/// Compact banner showing the guest's most recent in-flight food order,
+/// matching the reference design's "Active order" card on the dining tab.
+class _ActiveOrderCard extends StatelessWidget {
+  const _ActiveOrderCard({required this.order, required this.onTap});
+
+  final FoodOrder order;
+  final VoidCallback onTap;
+
+  double get _progress {
+    switch (order.status) {
+      case 'PENDING':
+        return 0.33;
+      case 'PREPARING':
+        return 0.66;
+      default:
+        return 1.0;
+    }
+  }
+
+  Color get _statusColor {
+    switch (order.status) {
+      case 'PENDING':
+        return AppColors.statusPending;
+      case 'PREPARING':
+        return AppColors.statusInfo;
+      default:
+        return AppColors.statusConfirmed;
+    }
+  }
+
+  String get _summary {
+    if (order.items.isEmpty) return 'Order #${order.orderId}';
+    return order.items
+        .map((i) => '${i['quantity'] ?? 1}× ${i['name'] ?? 'Item'}')
+        .join(', ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.lightGray2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Active order',
+              style: AppTypography.captionMedium.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    _summary,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    order.status[0] + order.status.substring(1).toLowerCase(),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _statusColor),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  'MUR ${order.total.toStringAsFixed(0)}',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: _progress,
+                minHeight: 6,
+                backgroundColor: AppColors.lightGray,
+                valueColor: AlwaysStoppedAnimation(_statusColor),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact menu-item row matching the reference design: thumbnail, name +
+/// description, price and a circular add button.
 class _DiningCard extends StatelessWidget {
   const _DiningCard({required this.item, required this.onOrder});
 
@@ -257,120 +343,88 @@ class _DiningCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onOrder,
+      onTap: item.isAvailable ? onOrder : null,
       child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-            child: SizedBox(
-              height: 184,
-              width: double.infinity,
-              child: item.imagePath != null && item.imagePath!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: item.imagePath!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, _) =>
-                          Container(color: AppColors.lightGray),
-                      errorWidget: (_, _, _) =>
-                          _DiningFallback(category: item.category),
-                    )
-                  : _DiningFallback(category: item.category),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.lightGray2),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 72,
+                height: 72,
+                child: item.imagePath != null && item.imagePath!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: item.imagePath!,
+                        fit: BoxFit.cover,
+                        placeholder: (_, _) => Container(color: AppColors.lightGray),
+                        errorWidget: (_, _, _) => _DiningFallback(category: item.category),
+                      )
+                    : _DiningFallback(category: item.category),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    item.description?.trim().isNotEmpty == true
+                        ? item.description!
+                        : 'Prepared fresh by our culinary team.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    !item.isAvailable ? 'Currently unavailable' : '${item.preparationMinutes} min prep',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: !item.isAvailable ? AppColors.statusCancelled : AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.name,
-                        style: AppTypography.cardTitle.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'MUR ${item.price.toStringAsFixed(0)}',
-                      style: AppTypography.priceSmall.copyWith(
-                        color: AppColors.darkNavy,
-                      ),
-                    ),
-                  ],
+                Text(
+                  'MUR ${item.price.toStringAsFixed(0)}',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  item.description?.trim().isNotEmpty == true
-                      ? item.description!
-                      : 'Crafted by our culinary team with fresh resort ingredients.',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _DiningMetaChip(
-                      icon: Icons.category_outlined,
-                      label: item.category,
+                GestureDetector(
+                  onTap: item.isAvailable ? onOrder : null,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: item.isAvailable ? AppColors.primary : AppColors.lightGray2,
+                      shape: BoxShape.circle,
                     ),
-                    _DiningMetaChip(
-                      icon: Icons.timer_outlined,
-                      label: '${item.preparationMinutes} min',
-                    ),
-                    _DiningMetaChip(
-                      icon: item.isAvailable
-                          ? Icons.check_circle_outline
-                          : Icons.pause_circle_outline,
-                      label: item.isAvailable ? 'Available now' : 'Unavailable',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: item.isAvailable ? onOrder : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.darkNavy,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    child: Text(
-                      item.isAvailable
-                          ? 'Order this item'
-                          : 'Currently unavailable',
-                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 18),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -383,18 +437,12 @@ class _DiningFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.goldAccentLight, AppColors.lightGray],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+      color: AppColors.lightGray,
       child: Center(
         child: Icon(
           _iconForCategory(category),
-          size: 52,
-          color: AppColors.darkNavy.withValues(alpha: 0.55),
+          size: 26,
+          color: AppColors.primary.withValues(alpha: 0.55),
         ),
       ),
     );
@@ -408,66 +456,5 @@ class _DiningFallback extends StatelessWidget {
     if (value.contains('DESSERT')) return Icons.icecream_outlined;
     if (value.contains('BREAKFAST')) return Icons.free_breakfast_outlined;
     return Icons.restaurant;
-  }
-}
-
-class _DiningMetaChip extends StatelessWidget {
-  const _DiningMetaChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: AppColors.darkNavy),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: AppTypography.captionMedium.copyWith(
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DiningStatPill extends StatelessWidget {
-  const _DiningStatPill({required this.label, required this.icon});
-
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: Colors.white),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: AppTypography.captionMedium.copyWith(color: Colors.white),
-          ),
-        ],
-      ),
-    );
   }
 }

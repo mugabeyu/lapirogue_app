@@ -175,7 +175,13 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => const Center(
+                child: Text(
+                  'We couldn\'t load your messages. Pull down to try again.',
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ),
           Container(

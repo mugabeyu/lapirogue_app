@@ -105,7 +105,7 @@ class ReservationNotifier extends StateNotifier<ReservationState> {
         status: statusType,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: 'We couldn\'t load your reservations. Please try again.');
     }
   }
 

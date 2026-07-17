@@ -1,127 +1,156 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class HeroSection extends StatelessWidget {
+import '../../../core/theme/app_colors.dart';
+import '../../../data/providers/notifications_provider.dart';
+
+/// Minimal, reference-matching home header: "Bonjour, {name}" greeting on
+/// the left, notification bell (with unread badge) on the right.
+class HeroSection extends ConsumerWidget {
   final String? firstName;
+
+  const HeroSection({
+    super.key,
+    this.firstName,
+    this.greeting = '',
+    this.location = '',
+    this.temperature = '',
+    this.weatherCondition = '',
+  });
+
+  // Kept for backward-compat with call sites; no longer rendered.
   final String greeting;
   final String location;
   final String temperature;
   final String weatherCondition;
 
-  const HeroSection({
-    super.key,
-    this.firstName,
-    this.greeting = 'Welcome back to La Pirogue Mauritius',
-    this.location = 'Wolmar, Flic en Flac',
-    this.temperature = '28\u00b0',
-    this.weatherCondition = 'Partly Cloudy',
-  });
-
-  String _greeting(String name) {
+  String _timeGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning, $name \u{1F44B}';
-    if (hour < 17) return 'Good Afternoon, $name \u{1F44B}';
-    if (hour < 21) return 'Good Evening, $name \u{1F44B}';
-    return 'Good Night, $name \u{1F44B}';
+    if (hour < 12) return 'Good morning,';
+    if (hour < 17) return 'Good afternoon,';
+    if (hour < 21) return 'Good evening,';
+    return 'Good night,';
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final name = firstName ?? 'Guest';
-    return SizedBox(
-      height: 300,
-      child: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/home.jpeg'),
-                fit: BoxFit.cover,
-              ),
+    final notificationsAsync = ref.watch(notificationsProvider);
+    final unreadCount = notificationsAsync.maybeWhen(
+      data: (items) => items.where((n) => !n.isRead).length,
+      orElse: () => 0,
+    );
+
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/images/lapirogue_logo.jpg',
+                    height: 28,
+                    width: 28,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'La Pirogue Hotel',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.5),
-                  Colors.black.withValues(alpha: 0.35),
-                  Colors.black.withValues(alpha: 0.6),
-                ],
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            const SizedBox(height: 14),
+            Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Spacer(),
-                      Image.asset('assets/images/lapirogue_logo.jpg', height: 32, fit: BoxFit.contain),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: () => context.push('/notifications'),
-                        child: Icon(Icons.notifications_outlined, color: Colors.white.withValues(alpha: 0.9), size: 24),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
                   Text(
-                    _greeting(name),
+                    _timeGreeting(),
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w500,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    greeting,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 14,
-                      fontWeight: FontWeight.w400,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Icon(Icons.wb_sunny_outlined, size: 16, color: Colors.white.withValues(alpha: 0.7)),
-                      const SizedBox(width: 6),
-                      Text(
-                        '$temperature $weatherCondition',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      Icon(Icons.location_on_outlined, size: 16, color: Colors.white.withValues(alpha: 0.7)),
-                      const SizedBox(width: 6),
-                      Text(
-                        location,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 2),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  const SizedBox(height: 24),
                 ],
               ),
             ),
-          ),
-        ],
+            GestureDetector(
+              onTap: () => context.push('/notifications'),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.lightGray2),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_outlined,
+                      color: AppColors.textPrimary,
+                      size: 22,
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(
+                          minWidth: 20,
+                          minHeight: 20,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            unreadCount > 9 ? '9+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+            ),
+          ],
+        ),
       ),
     );
   }

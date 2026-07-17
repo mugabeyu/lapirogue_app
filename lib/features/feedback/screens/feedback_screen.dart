@@ -93,7 +93,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.accentRed),
+          const SnackBar(
+            content: Text('We couldn\'t submit your review. Please try again.', style: TextStyle(fontWeight: FontWeight.w600)),
+            backgroundColor: AppTheme.accentRed,
+          ),
         );
       }
     } finally {

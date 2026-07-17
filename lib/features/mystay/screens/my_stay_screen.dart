@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
@@ -13,11 +14,83 @@ import '../../../core/services/guest_service.dart';
 import '../../../core/services/billing_service.dart';
 import '../../../core/models/guest_schedule_item.dart';
 
-class MyStayScreen extends ConsumerWidget {
+class MyStayScreen extends ConsumerStatefulWidget {
   const MyStayScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyStayScreen> createState() => _MyStayScreenState();
+}
+
+class _MyStayScreenState extends ConsumerState<MyStayScreen> {
+  bool _isCancelling = false;
+
+  Future<void> _confirmCancel(String reservationId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Cancel Reservation'),
+        content: const Text('Are you sure you want to cancel this reservation? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Keep Reservation')),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.statusCancelled, foregroundColor: Colors.white),
+            child: const Text('Cancel It'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    await _cancelReservation(reservationId);
+  }
+
+  Future<void> _cancelReservation(String reservationId) async {
+    setState(() => _isCancelling = true);
+    try {
+      final result = await Supabase.instance.client.rpc(
+        'cancel_guest_reservation',
+        params: {'p_reservation_id': reservationId},
+      );
+
+      final success = result is Map && result['success'] == true;
+      if (!mounted) return;
+
+      if (success) {
+        await ref.read(reservationProvider.notifier).refresh();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Your reservation has been cancelled', style: TextStyle(fontWeight: FontWeight.w600)),
+            backgroundColor: AppColors.statusConfirmed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('We couldn\'t cancel your reservation. Please try again or contact the front desk.', style: TextStyle(fontWeight: FontWeight.w600)),
+            backgroundColor: AppColors.statusCancelled,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.', style: TextStyle(fontWeight: FontWeight.w600)),
+          backgroundColor: AppColors.statusCancelled,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    if (mounted) setState(() => _isCancelling = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final reservationState = ref.watch(reservationProvider);
 
@@ -119,7 +192,7 @@ class MyStayScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isCheckedIn
-                          ? const Color(0xFF2F855A).withValues(alpha: 0.12)
+                          ? AppColors.statusConfirmed.withValues(alpha: 0.12)
                           : isReserved
                               ? AppColors.goldAccent.withValues(alpha: 0.12)
                               : AppColors.textTertiary.withValues(alpha: 0.12),
@@ -130,7 +203,7 @@ class MyStayScreen extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w600,
                         color: isCheckedIn
-                            ? const Color(0xFF2F855A)
+                            ? AppColors.statusConfirmed
                             : isReserved
                                 ? AppColors.goldAccent
                                 : AppColors.textTertiary,
@@ -228,9 +301,11 @@ class MyStayScreen extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.cancel_outlined, size: 18),
-                    label: const Text('Cancel Reservation'),
+                    onPressed: _isCancelling ? null : () => _confirmCancel(reservation.id),
+                    icon: _isCancelling
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.cancel_outlined, size: 18),
+                    label: Text(_isCancelling ? 'Cancelling...' : 'Cancel Reservation', style: const TextStyle(fontWeight: FontWeight.w600)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.statusCancelled,
                       side: const BorderSide(color: AppColors.statusCancelled),
@@ -363,7 +438,7 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
                   const SizedBox(width: 10),
                   Expanded(child: Text(item.title, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis)),
                   if (item.status.toUpperCase() == 'COMPLETED')
-                    const Icon(Icons.check_circle, size: 14, color: Color(0xFF2F855A)),
+                    const Icon(Icons.check_circle, size: 14, color: AppColors.statusConfirmed),
                 ],
               ),
             )),
