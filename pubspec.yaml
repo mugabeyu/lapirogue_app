@@ -147,6 +147,23 @@ flutter:
     - assets/images/lapirogue_logo.jpg
     - .env
 
+  # Bundled rather than fetched at runtime. google_fonts downloads on first
+  # paint, and text drawn before the file arrives falls back to whatever the
+  # platform picks — which rendered the OTP boxes as unreadable glyphs on web.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-ExtraBold.ttf
+          weight: 800
+
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

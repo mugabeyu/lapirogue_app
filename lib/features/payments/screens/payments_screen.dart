@@ -4,8 +4,11 @@ import 'package:intl/intl.dart';
 import '../../../core/services/guest_service.dart';
 import '../../../core/services/payment_service.dart';
 import '../../../core/services/billing_service.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/models/payment.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/formatters.dart';
 
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
@@ -94,10 +97,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         children: [
                           const Text(
                             'Payment History',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: AppTypography.sectionTitle,
                           ),
                           const SizedBox(height: 12),
                           ..._payments.map(
@@ -110,7 +110,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       child: Text(
                         'Payments are encrypted and processed securely. We never store full card details.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: AppTheme.textTertiary),
+                        style: AppTypography.small.copyWith(color: AppTheme.textTertiary),
                       ),
                     ),
                   ],
@@ -149,21 +149,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Billing Status',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                      ),
+                      style: AppTypography.small.copyWith(color: AppTheme.textSecondary),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       b.status.replaceAll('_', ' '),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: _statusColor(b.status),
-                      ),
+                      style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.bold, color: _statusColor(b.status)),
                     ),
                   ],
                 ),
@@ -215,9 +208,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         ),
         if (b.totals.isNotEmpty) ...[
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Breakdown',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           ...b.totals.entries
@@ -245,19 +238,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: isTotal ? 15 : 13,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.w400,
-              color: isTotal ? AppTheme.textPrimary : AppTheme.textSecondary,
-            ),
+            // The total steps up a level in the scale so it reads as the sum
+            // of the lines above it rather than another line item.
+            style: isTotal ? AppTypography.bodyMedium : AppTypography.caption,
           ),
           Text(
-            'MUR ${amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: isTotal ? 15 : 13,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
-              color: isTotal ? AppTheme.primary : AppTheme.textPrimary,
-            ),
+            formatMoney(amount),
+            style: isTotal
+                ? AppTypography.bodyMedium.copyWith(color: AppColors.primary)
+                : AppTypography.captionMedium,
           ),
         ],
       ),
@@ -284,16 +273,12 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           const SizedBox(height: 8),
           Text(
             title,
-            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+            style: AppTypography.small.copyWith(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(
             amount,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+            style: AppTypography.sectionTitle.copyWith(color: color),
           ),
         ],
       ),
@@ -339,28 +324,19 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 children: [
                   Text(
                     'Payment #$paymentId',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   if (reference != null && reference.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       'Ref: $reference',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                      ),
+                      style: AppTypography.small.copyWith(color: AppTheme.textSecondary),
                     ),
                   ],
                   const SizedBox(height: 4),
                   Text(
                     DateFormat('MMM d, yyyy • HH:mm').format(createdAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                    ),
+                    style: AppTypography.small.copyWith(color: AppTheme.textSecondary),
                   ),
                 ],
               ),
@@ -373,11 +349,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               ),
               child: Text(
                 status,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: statusColor,
-                ),
+                style: AppTypography.small.copyWith(fontWeight: FontWeight.w600, color: statusColor),
               ),
             ),
           ],
@@ -393,20 +365,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   const SizedBox(width: 4),
                   Text(
                     method,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                    ),
+                    style: AppTypography.small.copyWith(color: AppTheme.textSecondary),
                   ),
                 ],
               ),
               Text(
                 'MUR ${amount.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
+                style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primary),
               ),
             ],
           ),
@@ -421,7 +386,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   const Divider(),
                   const Text(
                     'Additional Charges',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: AppTypography.captionMedium,
                   ),
                   const SizedBox(height: 8),
                   ...extraItems.map(
@@ -432,17 +397,11 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         children: [
                           Text(
                             '${item['label']}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textSecondary,
-                            ),
+                            style: AppTypography.caption.copyWith(color: AppTheme.textSecondary),
                           ),
                           Text(
                             'MUR ${(item['amount'] ?? 0).toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppTypography.caption.copyWith(fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),

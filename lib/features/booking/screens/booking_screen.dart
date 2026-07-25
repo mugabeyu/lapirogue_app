@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/session_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/result_overlay.dart';
 import '../../../data/providers/reservation_provider.dart';
 
 enum BookingType { activity, dining, spa, roomService, customRequest }
@@ -190,20 +191,21 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_itemTypeLabel()} confirmed'),
-          backgroundColor: AppColors.statusConfirmed,
-        ),
+      await showResultOverlay(
+        context,
+        success: true,
+        title: '${_itemTypeLabel()} confirmed',
+        message: 'You will find it under My Stay, and reception has been notified.',
       );
+      if (!mounted) return;
       context.pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('We couldn\'t complete your booking. Please try again.', style: TextStyle(fontWeight: FontWeight.w600)),
-            backgroundColor: AppColors.statusCancelled,
-          ),
+        await showResultOverlay(
+          context,
+          success: false,
+          title: 'Booking not completed',
+          message: 'Something went wrong on our side. Please try again.',
         );
       }
     } finally {
@@ -347,10 +349,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       appBar: AppBar(
         title: Text(
           _itemTypeLabel(),
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.darkNavy,
@@ -519,10 +518,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 children: [
                   Text(
                     _isCustom ? 'Request Details' : 'Booking Details',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 16),
                   if (_isCustom) ...[
@@ -596,11 +592,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     Expanded(
                       child: Text(
                         'Your stay: ${DateFormat('MMM dd').format(_stayStart!)} - ${DateFormat('MMM dd, yyyy').format(_stayEnd!)}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.darkNavy.withValues(alpha: 0.8),
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: AppTypography.caption.copyWith(color: AppColors.darkNavy.withValues(alpha: 0.8), fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -638,10 +630,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     : _isCustom
                         ? _confirmLabel()
                         : '${_confirmLabel()} · MUR ${_totalPrice.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTypography.cardTitle,
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -696,10 +685,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 labelText: label,
                 hintText: hint,
                 border: InputBorder.none,
-                labelStyle: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey,
-                ),
+                labelStyle: AppTypography.small.copyWith(color: Colors.grey),
               ),
             ),
           ),
@@ -740,17 +726,14 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Date',
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                  style: AppTypography.small.copyWith(color: Colors.grey),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   DateFormat('MMM dd, yyyy').format(_selectedDate),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                  style: AppTypography.bodyMedium,
                 ),
               ],
             ),
@@ -774,9 +757,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         children: [
           const Icon(Icons.access_time, color: AppColors.darkNavy, size: 20),
           const SizedBox(width: 12),
-          const Text(
+          Text(
             'Time',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+            style: AppTypography.small.copyWith(color: Colors.grey),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -784,11 +767,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               child: DropdownButton<String>(
                 value: _selectedTime,
                 isExpanded: true,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
                 items: _timeSlots.map((slot) {
                   return DropdownMenuItem(value: slot, child: Text(slot));
                 }).toList(),
@@ -815,9 +794,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         children: [
           const Icon(Icons.location_on, color: AppColors.darkNavy, size: 20),
           const SizedBox(width: 12),
-          const Text(
+          Text(
             'Pickup',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+            style: AppTypography.small.copyWith(color: Colors.grey),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -825,11 +804,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               child: DropdownButton<String>(
                 value: _pickupPoint,
                 isExpanded: true,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
                 items: _pickupPoints.map((point) {
                   return DropdownMenuItem(value: point, child: Text(point));
                 }).toList(),
@@ -864,7 +839,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           const SizedBox(width: 12),
           Text(
             label,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            style: AppTypography.body.copyWith(fontWeight: FontWeight.w500),
           ),
           const Spacer(),
           IconButton(
@@ -877,7 +852,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             width: 28,
             child: Text(
               '$value',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: AppTypography.cardTitle,
               textAlign: TextAlign.center,
             ),
           ),

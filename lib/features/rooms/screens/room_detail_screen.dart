@@ -14,6 +14,7 @@ import '../../../core/models/room.dart';
 import '../../../core/widgets/auth_sheet.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/hotel_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 class RoomDetailScreen extends ConsumerStatefulWidget {
   final String roomId;
@@ -275,29 +276,18 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                           ),
                           child: Text(
                             room.type,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppTypography.small.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
                           ),
                         ),
                         const SizedBox(height: 10),
                         Text(
                           room.roomNumber,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: AppTypography.display.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Up to ${room.capacity} guests',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 14,
-                          ),
+                          style: AppTypography.caption.copyWith(color: Colors.white.withValues(alpha: 0.8)),
                         ),
                       ],
                     ),
@@ -316,20 +306,13 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text(
+                      Text(
                         'Price',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textTertiary,
-                        ),
+                        style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
                       ),
                       Text(
                         'MUR ${NumberFormat('#,###').format(room.price.toInt())}',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.darkNavy,
-                        ),
+                        style: AppTypography.display.copyWith(fontWeight: FontWeight.w700, color: AppColors.darkNavy),
                       ),
                     ],
                   ),
@@ -338,24 +321,20 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                     alignment: Alignment.centerRight,
                     child: Text(
                       'per night',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                     ),
                   ),
                   const SizedBox(height: 20),
                   if (room.description != null) ...[
                     Text(
                       room.description!,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        height: 1.6,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTypography.body.copyWith(color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 20),
                   ],
                   const Text(
                     'Amenities',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    style: AppTypography.sectionTitle,
                   ),
                   const SizedBox(height: 12),
                   GridView.count(
@@ -375,10 +354,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                                 child: Text(
                                   amenity,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.textPrimary,
-                                  ),
+                                  style: AppTypography.caption.copyWith(color: AppColors.textPrimary),
                                 ),
                               ),
                             ],
@@ -387,9 +363,9 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                         .toList(),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Booking Details',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
                   _buildDatePicker('Check-in', _checkIn, () => _pickDate(true)),
@@ -430,18 +406,11 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                       children: [
                         Text(
                           'Total ($nights nights)',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTypography.cardTitle,
                         ),
                         Text(
                           'MUR ${NumberFormat('#,###').format(totalAmount.toInt())}',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.darkNavy,
-                          ),
+                          style: AppTypography.heading.copyWith(color: AppColors.darkNavy),
                         ),
                       ],
                     ),
@@ -486,10 +455,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                             )
                           : const Text(
                               'Book This Room',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: AppTypography.cardTitle,
                             ),
                     ),
                   ),
@@ -498,7 +464,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
                     Center(
                       child: Text(
                         'A 6-digit verification code will be sent to your email',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                       ),
                     ),
                   ],
@@ -531,14 +497,11 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                 ),
                 Text(
                   DateFormat('MMM dd, yyyy').format(date),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                  style: AppTypography.bodyMedium,
                 ),
               ],
             ),
@@ -574,7 +537,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
           const SizedBox(width: 12),
           Text(
             label,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            style: AppTypography.body.copyWith(fontWeight: FontWeight.w500),
           ),
           const Spacer(),
           IconButton(
@@ -587,7 +550,7 @@ class _RoomDetailScreenState extends ConsumerState<RoomDetailScreen> {
             width: 28,
             child: Text(
               '$value',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: AppTypography.cardTitle,
               textAlign: TextAlign.center,
             ),
           ),

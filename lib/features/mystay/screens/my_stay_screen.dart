@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/utils/reservation_status.dart';
+import '../../../core/widgets/app_ui.dart';
 import '../../../data/providers/reservation_provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../core/services/schedule_service.dart';
 import '../../../core/services/guest_service.dart';
 import '../../../core/services/billing_service.dart';
 import '../../../core/models/guest_schedule_item.dart';
-import '../../../core/utils/reservation_status.dart';
 
 class MyStayScreen extends ConsumerStatefulWidget {
   const MyStayScreen({super.key});
@@ -29,37 +31,13 @@ class _MyStayScreenState extends ConsumerState<MyStayScreen> {
 
     if (!authState.isAuthenticated) {
       return Scaffold(
-        backgroundColor: AppColors.background,
         body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 100, height: 100,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.lightGray),
-                    child: const Icon(Icons.villa_outlined, size: 48, color: AppColors.textTertiary),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('My Stay', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  Text('Sign in to view your stay details', style: TextStyle(color: AppColors.textSecondary)),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => context.push('/login'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.darkNavy,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: const Text('Sign In'),
-                  ),
-                ],
-              ),
-            ),
+          child: EmptyState(
+            icon: Icons.villa_outlined,
+            title: 'My Stay',
+            message: 'Sign in to see your room, schedule and bill.',
+            actionLabel: 'Sign in',
+            onAction: () => context.push('/login'),
           ),
         ),
       );
@@ -67,37 +45,13 @@ class _MyStayScreenState extends ConsumerState<MyStayScreen> {
 
     if (!reservationState.hasActiveReservation) {
       return Scaffold(
-        backgroundColor: AppColors.background,
         body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 100, height: 100,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.lightGray),
-                    child: const Icon(Icons.villa_outlined, size: 48, color: AppColors.textTertiary),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('No Active Stay', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  Text('You don\'t have an active reservation', style: TextStyle(color: AppColors.textSecondary)),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => context.push('/rooms'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.darkNavy,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: const Text('Book a Room'),
-                  ),
-                ],
-              ),
-            ),
+          child: EmptyState(
+            icon: Icons.villa_outlined,
+            title: 'No active stay',
+            message: 'When you book a room it will appear here with everything you need.',
+            actionLabel: 'Browse rooms',
+            onAction: () => context.push('/rooms'),
           ),
         ),
       );
@@ -109,155 +63,198 @@ class _MyStayScreenState extends ConsumerState<MyStayScreen> {
     final nights = reservation.checkOut.difference(reservation.checkIn).inDays;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: RefreshIndicator(
+          onRefresh: () =>
+              ref.read(reservationProvider.notifier).refresh(),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.screenPadding,
+              AppTheme.space4,
+              AppTheme.screenPadding,
+              AppTheme.space10,
+            ),
             children: [
-              const SizedBox(height: 16),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Expanded(child: Text('My Stay', style: AppTypography.heading)),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: statusInfo.backgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      statusInfo.label,
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusInfo.color),
-                    ),
-                  ),
+                  const Expanded(child: Text('My stay', style: AppTypography.display)),
+                  StatusPill(label: statusInfo.label, tone: statusInfo.tone),
                 ],
               ),
-              const SizedBox(height: 24),
-              if (room != null)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 4)),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                        child: SizedBox(
-                          height: 200,
-                          width: double.infinity,
-                          child: room.imagePath != null && room.imagePath!.isNotEmpty
-                              ? CachedNetworkImage(imageUrl: room.imagePath!, fit: BoxFit.cover, placeholder: (_, _) => Container(color: AppColors.lightGray), errorWidget: (_, _, _) => Container(color: AppColors.lightGray, child: const Icon(Icons.image, color: AppColors.textTertiary)))
-                              : Container(color: AppColors.lightGray, child: const Icon(Icons.villa, color: AppColors.textTertiary)),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(room.roomNumber, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500)),
-                                const Spacer(),
-                                Text(room.type, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                _infoChip(Icons.people_outlined, '${room.capacity} guests'),
-                                const SizedBox(width: 8),
-                                _infoChip(Icons.bed_outlined, room.type),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+              const SizedBox(height: AppTheme.space6),
+
+              if (room != null) ...[
+                _RoomCard(
+                  imagePath: room.imagePath,
+                  roomNumber: room.roomNumber,
+                  type: room.type,
+                  capacity: room.capacity,
                 ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 4)),
-                  ],
-                ),
+                const SizedBox(height: AppTheme.space5),
+              ],
+
+              AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Stay Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 16),
-                    _detailRow(Icons.calendar_today, 'Check-in', DateFormat('MMM dd, yyyy').format(reservation.checkIn)),
-                    const SizedBox(height: 12),
-                    _detailRow(Icons.calendar_today, 'Check-out', DateFormat('MMM dd, yyyy').format(reservation.checkOut)),
-                    const SizedBox(height: 12),
-                    _detailRow(Icons.nightlight_outlined, 'Nights', '$nights night${nights > 1 ? 's' : ''}'),
-                    const SizedBox(height: 12),
-                    _detailRow(Icons.group_outlined, 'Guests', '${reservation.adults} adult${reservation.adults > 1 ? 's' : ''}${reservation.children > 0 ? ', ${reservation.children} children' : ''}'),
-                    const SizedBox(height: 12),
-                    _detailRow(Icons.payments_outlined, 'Total', 'MUR ${reservation.totalAmount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}'),
+                    Text('Stay details', style: AppTypography.cardTitle),
+                    const SizedBox(height: AppTheme.space3),
+                    DetailRow(
+                      icon: Icons.login_rounded,
+                      label: 'Check-in',
+                      value: formatDate(reservation.checkIn),
+                    ),
+                    const Divider(),
+                    DetailRow(
+                      icon: Icons.logout_rounded,
+                      label: 'Check-out',
+                      value: formatDate(reservation.checkOut),
+                    ),
+                    const Divider(),
+                    DetailRow(
+                      icon: Icons.nightlight_outlined,
+                      label: 'Duration',
+                      value: formatNights(nights),
+                    ),
+                    const Divider(),
+                    DetailRow(
+                      icon: Icons.group_outlined,
+                      label: 'Guests',
+                      value: formatOccupancy(
+                        reservation.adults,
+                        reservation.children,
+                      ),
+                    ),
+                    const Divider(),
+                    DetailRow(
+                      icon: Icons.payments_outlined,
+                      label: 'Room total',
+                      value: formatMoney(reservation.totalAmount),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text('Daily Schedule', style: AppTypography.sectionTitle),
-              const SizedBox(height: 12),
-              _DailyScheduleSection(),
-              const SizedBox(height: 24),
-              const Text('Payments', style: AppTypography.sectionTitle),
-              const SizedBox(height: 12),
-              _PaymentsSection(),
-              const SizedBox(height: 24),
+
+              const SizedBox(height: AppTheme.space8),
+              SectionHeading(
+                title: 'Today',
+                actionLabel: 'View all',
+                onAction: () => context.push('/daily-schedule'),
+              ),
+              const _DailyScheduleSection(),
+
+              const SizedBox(height: AppTheme.space8),
+              SectionHeading(
+                title: 'Your bill',
+                actionLabel: 'View all',
+                onAction: () => context.push('/payments'),
+              ),
+              const _BillingSection(),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _infoChip(IconData icon, String label) {
+class _RoomCard extends StatelessWidget {
+  final String? imagePath;
+  final String roomNumber;
+  final String type;
+  final int capacity;
+
+  const _RoomCard({
+    required this.imagePath,
+    required this.roomNumber,
+    required this.type,
+    required this.capacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 180,
+              width: double.infinity,
+              child: imagePath != null && imagePath!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: imagePath!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, _) =>
+                          Container(color: AppColors.surfaceMuted),
+                      errorWidget: (_, _, _) => const _RoomImageFallback(),
+                    )
+                  : const _RoomImageFallback(),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppTheme.space5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('YOUR ROOM', style: AppTypography.overline),
+                  const SizedBox(height: AppTheme.space2),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(roomNumber, style: AppTypography.heading),
+                      const SizedBox(width: AppTheme.space3),
+                      Expanded(
+                        child: Text(
+                          type,
+                          style: AppTypography.body,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.space3),
+                  Row(
+                    children: [
+                      Icon(Icons.people_outline,
+                          size: 16, color: AppColors.textTertiary),
+                      const SizedBox(width: AppTheme.space1),
+                      Text('Sleeps $capacity', style: AppTypography.caption),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoomImageFallback extends StatelessWidget {
+  const _RoomImageFallback();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: AppColors.textTertiary),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-        ],
-      ),
+      color: AppColors.surfaceMuted,
+      child: const Icon(Icons.villa_outlined,
+          size: 40, color: AppColors.textTertiary),
     );
   }
-
-  Widget _detailRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: AppColors.textTertiary),
-        const SizedBox(width: 10),
-        Text(label, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-        const Spacer(),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-      ],
-    );
-  }
-
 }
 
 class _DailyScheduleSection extends StatefulWidget {
+  const _DailyScheduleSection();
+
   @override
   State<_DailyScheduleSection> createState() => _DailyScheduleSectionState();
 }
@@ -274,93 +271,128 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
 
   Future<void> _load() async {
     final guest = await GuestService().getCurrentGuest();
-    if (guest == null) { setState(() => _isLoading = false); return; }
+    if (guest == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
     try {
       await ScheduleService().autoCompleteOverdueItems(guest.id);
       final items = await ScheduleService().getScheduleForGuest(guest.id);
       final today = DateTime.now();
+      if (!mounted) return;
       setState(() {
-        _items = items.where((item) =>
-          item.startAt.year == today.year &&
-          item.startAt.month == today.month &&
-          item.startAt.day == today.day
-        ).toList();
+        _items = items
+            .where((item) =>
+                item.startAt.year == today.year &&
+                item.startAt.month == today.month &&
+                item.startAt.day == today.day)
+            .toList();
         _isLoading = false;
       });
-    } catch (_) { setState(() => _isLoading = false); }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const SizedBox(height: 60, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+    if (_isLoading) return const InlineLoader();
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+    if (_items.isEmpty) {
+      return AppCard(
+        child: Row(
+          children: [
+            const Icon(Icons.event_available_outlined,
+                size: 20, color: AppColors.textTertiary),
+            const SizedBox(width: AppTheme.space3),
+            Expanded(
+              child: Text('Nothing scheduled today.', style: AppTypography.body),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return AppCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.space5,
+        vertical: AppTheme.space4,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.event_note, size: 18, color: AppColors.darkNavy),
-              const SizedBox(width: 8),
-              Text(DateFormat('EEEE, MMM d').format(DateTime.now()),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => context.push('/daily-schedule'),
-                child: const Text('View All', style: TextStyle(fontSize: 13, color: AppColors.goldAccent, fontWeight: FontWeight.w500)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (_items.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.event_available, size: 16, color: AppColors.textTertiary),
-                  const SizedBox(width: 6),
-                  Text('No activities scheduled today', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                ],
-              ),
-            )
-          else
-            ..._items.take(3).map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: AppColors.darkNavy.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
-                    child: Text(DateFormat('HH:mm').format(item.startAt), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.darkNavy)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(item.title, style: const TextStyle(fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  if (item.status.toUpperCase() == 'COMPLETED')
-                    const Icon(Icons.check_circle, size: 14, color: AppColors.statusConfirmed),
-                ],
-              ),
-            )),
-          if (_items.length > 3)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('+${_items.length - 3} more', style: TextStyle(fontSize: 12, color: AppColors.textTertiary)),
+          for (var i = 0; i < _items.take(4).length; i++) ...[
+            if (i > 0) const Divider(height: AppTheme.space5),
+            _ScheduleRow(item: _items[i]),
+          ],
+          if (_items.length > 4) ...[
+            const SizedBox(height: AppTheme.space3),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('+${_items.length - 4} more today',
+                  style: AppTypography.caption),
             ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _PaymentsSection extends StatefulWidget {
+class _ScheduleRow extends StatelessWidget {
+  final GuestScheduleItem item;
+  const _ScheduleRow({required this.item});
+
   @override
-  State<_PaymentsSection> createState() => _PaymentsSectionState();
+  Widget build(BuildContext context) {
+    final isDone = item.status.toUpperCase() == 'COMPLETED';
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.space2,
+            vertical: AppTheme.space1,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          ),
+          child: Text(
+            formatTime(item.startAt),
+            style: AppTypography.small.copyWith(
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppTheme.space3),
+        Expanded(
+          child: Text(
+            item.title,
+            style: AppTypography.bodyMedium.copyWith(
+              color: isDone ? AppColors.textTertiary : AppColors.textPrimary,
+              decoration: isDone ? TextDecoration.lineThrough : null,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (isDone)
+          const Icon(Icons.check_circle,
+              size: 18, color: AppColors.success),
+      ],
+    );
+  }
 }
 
-class _PaymentsSectionState extends State<_PaymentsSection> {
+class _BillingSection extends StatefulWidget {
+  const _BillingSection();
+
+  @override
+  State<_BillingSection> createState() => _BillingSectionState();
+}
+
+class _BillingSectionState extends State<_BillingSection> {
   BillingSummary? _billing;
   bool _isLoading = true;
 
@@ -372,96 +404,90 @@ class _PaymentsSectionState extends State<_PaymentsSection> {
 
   Future<void> _load() async {
     final guestId = await GuestService().getCurrentGuestId();
-    if (guestId == null) { setState(() => _isLoading = false); return; }
+    if (guestId == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
     try {
-      _billing = await BillingService().getBillingSummary(guestId);
-      setState(() => _isLoading = false);
-    } catch (_) { setState(() => _isLoading = false); }
+      final billing = await BillingService().getBillingSummary(guestId);
+      if (!mounted) return;
+      setState(() {
+        _billing = billing;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
-  Color _statusColor(String status) {
+  StatusTone _toneFor(String status) {
     switch (status.toUpperCase()) {
-      case 'PAID': case 'COMPLETED': return AppColors.statusConfirmed;
-      case 'PARTIALLY_PAID': return AppColors.goldAccent;
-      default: return AppColors.statusCancelled;
+      case 'PAID':
+      case 'COMPLETED':
+        return StatusTone.success;
+      case 'PARTIALLY_PAID':
+        return StatusTone.warning;
+      default:
+        return StatusTone.danger;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const SizedBox(height: 60, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+    if (_isLoading) return const InlineLoader();
 
-    final b = _billing;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
+    final billing = _billing;
+    if (billing == null) {
+      return AppCard(
+        child: Text('No charges on your account yet.', style: AppTypography.body),
+      );
+    }
+
+    final settled = billing.balanceDue <= 0;
+
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.receipt_outlined, size: 18, color: AppColors.darkNavy),
-              const SizedBox(width: 8),
-              const Text('Billing Summary', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              StatusPill(
+                label: humanizeStatus(billing.status),
+                tone: _toneFor(billing.status),
+              ),
               const Spacer(),
-              GestureDetector(
-                onTap: () => context.push('/payments'),
-                child: const Text('View All', style: TextStyle(fontSize: 13, color: AppColors.goldAccent, fontWeight: FontWeight.w500)),
+              Text(
+                settled
+                    ? 'Nothing due'
+                    : '${formatMoney(billing.balanceDue)} due',
+                style: AppTypography.priceSmall.copyWith(
+                  color: settled ? AppColors.success : AppColors.textPrimary,
+                ),
               ),
             ],
           ),
-          if (b == null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text('No billing info available', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-            )
-          else ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _statusColor(b.status).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(b.status.replaceAll('_', ' '), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _statusColor(b.status))),
-                ),
-                const Spacer(),
-                Text('MUR ${b.balanceDue.toStringAsFixed(0)} due', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _statusColor(b.status))),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _billCard('Total Charges', 'MUR ${b.totalCharges.toStringAsFixed(0)}', AppColors.darkNavy),
-                const SizedBox(width: 8),
-                _billCard('Total Paid', 'MUR ${b.totalPaid.toStringAsFixed(0)}', AppColors.statusConfirmed),
-                const SizedBox(width: 8),
-                _billCard('Balance', 'MUR ${b.balanceDue.toStringAsFixed(0)}', b.balanceDue > 0 ? AppColors.goldAccent : AppColors.statusConfirmed),
-              ],
-            ),
-          ],
+          const SizedBox(height: AppTheme.space4),
+          Row(
+            children: [
+              StatTile(
+                label: 'Charges',
+                value: formatMoney(billing.totalCharges),
+              ),
+              const SizedBox(width: AppTheme.space2),
+              StatTile(
+                label: 'Paid',
+                value: formatMoney(billing.totalPaid),
+                valueColor: AppColors.success,
+              ),
+              const SizedBox(width: AppTheme.space2),
+              StatTile(
+                label: 'Balance',
+                value: formatMoney(billing.balanceDue),
+                valueColor: settled ? AppColors.success : AppColors.warning,
+              ),
+            ],
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _billCard(String label, String amount, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-            const SizedBox(height: 4),
-            Text(amount, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
-          ],
-        ),
       ),
     );
   }

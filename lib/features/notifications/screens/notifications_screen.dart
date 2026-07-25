@@ -6,6 +6,7 @@ import '../../../core/widgets/auth_sheet.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/notifications_provider.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/theme/app_typography.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -35,7 +36,7 @@ class NotificationsScreen extends ConsumerWidget {
                     child: const Icon(Icons.notifications_outlined, size: 48, color: AppColors.textTertiary),
                   ),
                   const SizedBox(height: 24),
-                  const Text('Notifications', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                  Text('Notifications', style: AppTypography.heading.copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   Text('Sign in to stay updated', style: TextStyle(color: AppColors.textSecondary)),
                 ],
@@ -79,7 +80,7 @@ class NotificationsScreen extends ConsumerWidget {
                       child: const Icon(Icons.notifications_off_outlined, size: 40, color: AppColors.textTertiary),
                     ),
                     const SizedBox(height: 16),
-                    const Text('No notifications yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    Text('No notifications yet', style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w500)),
                     const SizedBox(height: 8),
                     Text('You\'ll see updates from the hotel here', style: TextStyle(color: AppColors.textSecondary)),
                   ],
@@ -146,15 +147,15 @@ class NotificationsScreen extends ConsumerWidget {
                           title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: isRead ? AppColors.textSecondary : AppColors.textPrimary),
+                          style: AppTypography.captionMedium.copyWith(color: isRead ? AppColors.textSecondary : AppColors.textPrimary),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(time, style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                      Text(time, style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(body, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                  Text(body, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                 ],
               ),
             ),

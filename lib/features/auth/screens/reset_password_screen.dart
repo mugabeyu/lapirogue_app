@@ -1,11 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/widgets/auth_scaffold.dart';
 import '../../../core/widgets/otp_input_row.dart';
 import '../../../core/widgets/result_overlay.dart';
+import '../../../data/providers/auth_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 /// Password reset step 2: the guest first enters the 6-digit code emailed to
 /// them (see the "Reset password" Supabase email template, which sends
@@ -14,7 +20,7 @@ import '../../../core/widgets/result_overlay.dart';
 /// card. An incorrect code keeps the guest on the code step with an error
 /// and a resend option, instead of letting them type a password that will
 /// never be saved.
-class ResetPasswordScreen extends StatefulWidget {
+class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String? email;
 
   const ResetPasswordScreen({
@@ -23,10 +29,11 @@ class ResetPasswordScreen extends StatefulWidget {
   });
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _otpControllers = List.generate(6, (_) => TextEditingController());
   final _otpFocusNodes = List.generate(6, (_) => FocusNode());
   final _emailController = TextEditingController();
@@ -48,14 +55,32 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   String get _otpCode => _otpControllers.map((c) => c.text).join();
 
+  /// Captured while the widget is still mounted, because `dispose` needs it
+  /// after `ref` has stopped being usable.
+  late final AuthNotifier _authNotifier;
+
   @override
   void initState() {
     super.initState();
     _emailController.text = widget.email ?? '';
+    _authNotifier = ref.read(authStateProvider.notifier);
   }
+
+  /// Set once the password has actually been changed, so leaving the screen
+  /// afterwards is not mistaken for abandoning the flow.
+  bool _completed = false;
 
   @override
   void dispose() {
+    // Leaving with a verified code but no new password would otherwise strand
+    // a usable session on the device, which the next launch would treat as a
+    // normal sign-in. Drop it.
+    if (!_completed) {
+      // Read the notifier directly: `ref` is not safe to use once dispose has
+      // started, and this must run regardless of how the screen was left.
+      unawaited(_authNotifier.cancelPasswordRecovery());
+    }
+
     for (final c in _otpControllers) {
       c.dispose();
     }
@@ -88,8 +113,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
-      // Verifying the recovery OTP establishes an authenticated session for
-      // this user, which updateUser() in _resetPassword() needs later.
+      // Verifying the recovery OTP establishes a real session, which
+      // updateUser() needs below. Flag the recovery first so that session is
+      // held at "resetting password" instead of being reported as a completed
+      // sign-in — otherwise a correct code alone would open the whole app.
+      await ref.read(authStateProvider.notifier).beginPasswordRecovery();
+
       await Supabase.instance.client.auth.verifyOTP(
         email: email,
         token: _otpCode,
@@ -99,6 +128,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       if (!mounted) return;
       setState(() => _codeVerified = true);
     } catch (e) {
+      // A failed verification leaves no usable session, so drop the hold.
+      await ref.read(authStateProvider.notifier).cancelPasswordRecovery();
+      if (!mounted) return;
       // Incorrect/expired code: stay on this step, surface the error, and
       // let the guest request a fresh code instead of falling through.
       setState(() => _errorMessage = friendlyAuthError(e));
@@ -120,8 +152,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         UserAttributes(password: _passwordController.text),
       );
 
-      // Sign out so the guest logs back in with their new password, matching
-      // the web app's behaviour.
+      // The reset is complete, so release the hold and sign out — the guest
+      // logs back in with the new password, matching the web app.
+      _completed = true;
+      await ref.read(authStateProvider.notifier).endPasswordRecovery();
       await Supabase.instance.client.auth.signOut();
 
       if (!mounted) return;
@@ -196,7 +230,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           Expanded(
             child: Text(
               _errorMessage!,
-              style: const TextStyle(color: AppColors.statusCancelled, fontSize: 13, fontWeight: FontWeight.w600),
+              style: AppTypography.captionMedium.copyWith(color: AppColors.statusCancelled),
             ),
           ),
         ],
@@ -219,15 +253,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             child: const Icon(Icons.mark_email_unread, color: AppColors.primary, size: 34),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Enter Verification Code',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            style: AppTypography.heading.copyWith(color: AppColors.textPrimary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             'We sent a 6-digit code to your email. Enter it below to continue.',
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+            style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
@@ -272,7 +306,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       height: 24,
                       child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                     )
-                  : const Text('Verify Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  : const Text('Verify Code', style: AppTypography.cardTitle),
             ),
           ),
           const SizedBox(height: 12),
@@ -300,15 +334,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             child: const Icon(Icons.lock_reset_rounded, color: AppColors.primary, size: 34),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Create New Password',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            style: AppTypography.heading.copyWith(color: AppColors.textPrimary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             'Code verified. Choose a new password for your account.',
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+            style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
@@ -368,7 +402,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       height: 24,
                       child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                     )
-                  : const Text('Reset Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  : const Text('Reset Password', style: AppTypography.cardTitle),
             ),
           ),
         ],
@@ -378,21 +412,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reset Password'),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: _codeVerified ? _buildNewPasswordStep() : _buildCodeStep(),
-        ),
-      ),
+    return AuthScaffold(
+      title: 'Reset Password',
+      child: _codeVerified ? _buildNewPasswordStep() : _buildCodeStep(),
     );
   }
 }

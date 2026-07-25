@@ -11,6 +11,7 @@ import '../../../core/models/guest_schedule_item.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/reservation_provider.dart';
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_typography.dart';
 
 /// Daily Schedule Screen - Shows guest schedule items in day-by-day format
 /// with "Mark as Completed" button to earn eco-points.
@@ -188,23 +189,19 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                     ),
                   ],
                 ),
-                child: const Column(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.eco, size: 64, color: Colors.white),
                     SizedBox(height: 16),
                     Text(
                       '+25 Eco-Points!',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: AppTypography.displayLarge.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     SizedBox(height: 8),
                     Text(
                       'Keep up the great work!',
-                      style: TextStyle(fontSize: 16, color: Colors.white70),
+                      style: AppTypography.bodyLarge.copyWith(color: Colors.white70),
                     ),
                   ],
                 ),
@@ -278,18 +275,11 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                         children: [
                           Text(
                             DateFormat('EEEE').format(_selectedDate),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppTheme.textSecondary,
-                            ),
+                            style: AppTypography.caption.copyWith(color: AppTheme.textSecondary),
                           ),
                           Text(
                             DateFormat('MMMM d, yyyy').format(_selectedDate),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
+                            style: AppTypography.sectionTitle.copyWith(color: AppTheme.textPrimary),
                           ),
                         ],
                       ),
@@ -322,10 +312,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                               const SizedBox(height: 16),
                               Text(
                                 'No activities scheduled',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: AppTheme.textTertiary,
-                                ),
+                                style: AppTypography.bodyLarge.copyWith(color: AppTheme.textTertiary),
                               ),
                             ],
                           ),
@@ -379,21 +366,14 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                 children: [
                   Text(
                     DateFormat('HH:mm').format(startAt),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isCompleted
+                    style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.bold, color: isCompleted
                           ? AppTheme.accentGreen
-                          : AppTheme.primary,
-                    ),
+                          : AppTheme.primary),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     DateFormat('HH:mm').format(endAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                    ),
+                    style: AppTypography.small.copyWith(color: AppTheme.textSecondary),
                   ),
                 ],
               ),
@@ -409,16 +389,11 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                         Expanded(
                           child: Text(
                             title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isCompleted
+                            style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.bold, color: isCompleted
                                   ? AppTheme.textSecondary
-                                  : AppTheme.textPrimary,
-                              decoration: isCompleted
+                                  : AppTheme.textPrimary, decoration: isCompleted
                                   ? TextDecoration.lineThrough
-                                  : null,
-                            ),
+                                  : null),
                           ),
                         ),
                         _buildStatusBadge(status),
@@ -428,10 +403,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                       const SizedBox(height: 4),
                       Text(
                         description,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textSecondary,
-                        ),
+                        style: AppTypography.caption.copyWith(color: AppTheme.textSecondary),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -448,10 +420,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                           const SizedBox(width: 4),
                           Text(
                             location,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textTertiary,
-                            ),
+                            style: AppTypography.small.copyWith(color: AppTheme.textTertiary),
                           ),
                         ],
                       ),
@@ -468,11 +437,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                           const SizedBox(width: 6),
                           Text(
                             'Marked as Completed',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.accentGreen,
-                            ),
+                            style: AppTypography.captionMedium.copyWith(color: AppTheme.accentGreen),
                           ),
                         ],
                       ),
@@ -538,11 +503,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
       ),
       child: Text(
         status,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
+        style: AppTypography.small.copyWith(fontWeight: FontWeight.w600, color: color),
       ),
     );
   }
@@ -596,10 +557,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                     children: [
                       const Text(
                         'Add Custom Service',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTypography.sectionTitle,
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -745,13 +703,9 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'Add to Schedule',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                              style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                     ),
                   ),

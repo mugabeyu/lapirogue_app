@@ -1,57 +1,99 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens matching the La Pirogue guest-app reference design
-/// (clean white surfaces, blue-600 primary accent, soft status pills).
+/// Colour tokens for the La Pirogue guest app.
+///
+/// The palette is built from a warm neutral ramp plus a single teal brand
+/// accent, so hierarchy comes from *neutral weight* (how dark the text is)
+/// rather than from colour. Colour is reserved for the few things that
+/// genuinely need to be noticed: the primary action, and status.
+///
+/// Rules this file exists to enforce:
+///  • Text hierarchy is three distinct greys, never three copies of black.
+///  • Accent colour marks one action per screen, not every interactive thing.
+///  • Status colours are only ever used for status.
 class AppColors {
   AppColors._();
 
-  // ── Primary accent (used for CTAs, active nav, links, focus rings) ──
-  // Kept the old field names (darkNavy / goldAccent) for backward
-  // compatibility with the ~50 screens that already reference them —
-  // only the underlying values changed.
-  static const Color darkNavy = Color(0xFF2563EB); // primary blue-600
-  static const Color darkNavyLight = Color(0xFF3B82F6); // blue-500
-  static const Color darkNavyDark = Color(0xFF1D4ED8); // blue-700
+  // ── Brand accent ────────────────────────────────────────────────────
+  // Teal reads as coastal/resort rather than "default framework blue", and
+  // sits far enough from the green/amber/red status hues to stay unambiguous.
+  static const Color primary = Color(0xFF0F6E6E);
+  static const Color primaryLight = Color(0xFF14918F);
+  static const Color primaryDark = Color(0xFF0A4F52);
+  static const Color primarySoft = Color(0xFFE6F2F1);
 
-  static const Color goldAccent = Color(0xFF2563EB); // same accent as primary
-  static const Color goldAccentLight = Color(0xFF60A5FA); // blue-400
+  /// Warm sand, for editorial moments (hero overlays, eco/loyalty surfaces).
+  /// Deliberately low-saturation so it supports the accent instead of
+  /// competing with it.
+  static const Color sand = Color(0xFFC8A26A);
+  static const Color sandSoft = Color(0xFFF7F1E6);
 
-  static const Color primary = Color(0xFF2563EB);
-  static const Color primaryLight = Color(0xFF3B82F6);
-  static const Color primaryDark = Color(0xFF1D4ED8);
-  static const Color primarySoft = Color(0xFFEFF6FF); // blue-50 tint bg
-
-  static const Color background = Color(0xFFFFFFFF);
+  // ── Neutrals ────────────────────────────────────────────────────────
+  // Very slightly warm greys — a pure-grey ramp next to the teal accent
+  // reads cold and clinical.
+  static const Color background = Color(0xFFFBFAF8);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceMuted = Color(0xFFF4F2EF);
+  static const Color surfaceSunken = Color(0xFFEDEAE5);
   static const Color white = Color(0xFFFFFFFF);
-  static const Color lightGray = Color(0xFFF3F4F6); // gray-100
-  static const Color lightGray2 = Color(0xFFE5E7EB); // gray-200 (borders)
 
-  static const Color textPrimary = Color(0xFF111827); // gray-900
-  static const Color textSecondary = Color(0xFF111827); // black (was gray-500)
-  static const Color textTertiary = Color(0xFF111827); // black (was gray-400)
-  static const Color textOnPrimary = Colors.white;
+  static const Color border = Color(0xFFE4E0DA);
+  static const Color borderStrong = Color(0xFFD2CCC3);
 
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color cardLight = Colors.white;
+  // ── Text ────────────────────────────────────────────────────────────
+  // Three genuinely different weights. These were previously all #111827,
+  // which flattened every screen into one undifferentiated block of black.
+  static const Color textPrimary = Color(0xFF1A1A18); // headings, values
+  static const Color textSecondary = Color(0xFF5C5A55); // body, descriptions
+  static const Color textTertiary = Color(0xFF8A8781); // labels, meta, hints
+  static const Color textOnPrimary = Color(0xFFFFFFFF);
+  static const Color textOnDark = Color(0xFFF7F5F2);
 
-  // ── Status colors + soft background tints for pill badges ──
-  static const Color statusConfirmed = Color(0xFF059669); // emerald-600
-  static const Color statusConfirmedBg = Color(0xFFD1FAE5);
+  // ── Status ──────────────────────────────────────────────────────────
+  static const Color success = Color(0xFF1F7A4D);
+  static const Color successSoft = Color(0xFFE3F3EA);
 
-  static const Color statusPending = Color(0xFFD97706); // amber-600
-  static const Color statusPendingBg = Color(0xFFFEF3C7);
+  static const Color warning = Color(0xFFB26A05);
+  static const Color warningSoft = Color(0xFFFBEEDC);
 
-  static const Color statusCancelled = Color(0xFFDC2626); // red-600
-  static const Color statusCancelledBg = Color(0xFFFEE2E2);
+  static const Color danger = Color(0xFFB3261E);
+  static const Color dangerSoft = Color(0xFFFAE7E5);
 
-  static const Color statusInfo = Color(0xFF2563EB); // blue-600
-  static const Color statusInfoBg = Color(0xFFDBEAFE);
+  static const Color info = Color(0xFF1D5B8F);
+  static const Color infoSoft = Color(0xFFE4EFF7);
 
-  static const Color statusNeutral = Color(0xFF6B7280); // gray-500
-  static const Color statusNeutralBg = Color(0xFFF3F4F6);
+  static const Color neutralStatus = Color(0xFF6B6862);
+  static const Color neutralStatusSoft = Color(0xFFEFEDE9);
 
-  // ── Misc accents ──
-  static const Color ratingStar = Color(0xFFF59E0B); // amber-500
-  static const Color ecoGreen = Color(0xFF059669);
-  static const Color ecoGreenLight = Color(0xFFECFDF5);
+  // ── Misc accents ────────────────────────────────────────────────────
+  static const Color ratingStar = Color(0xFFE0A02C);
+  static const Color overlayScrim = Color(0x66000000);
+
+  // ── Legacy aliases ──────────────────────────────────────────────────
+  // Kept so the ~50 screens still referencing the old names keep compiling
+  // while they migrate; every one of these now resolves into the palette
+  // above rather than to the old flat blue.
+  static const Color darkNavy = primary;
+  static const Color darkNavyLight = primaryLight;
+  static const Color darkNavyDark = primaryDark;
+  static const Color goldAccent = sand;
+  static const Color goldAccentLight = sandSoft;
+  static const Color lightGray = surfaceMuted;
+  static const Color lightGray2 = border;
+  static const Color surfaceLight = surface;
+  static const Color cardLight = surface;
+
+  static const Color statusConfirmed = success;
+  static const Color statusConfirmedBg = successSoft;
+  static const Color statusPending = warning;
+  static const Color statusPendingBg = warningSoft;
+  static const Color statusCancelled = danger;
+  static const Color statusCancelledBg = dangerSoft;
+  static const Color statusInfo = info;
+  static const Color statusInfoBg = infoSoft;
+  static const Color statusNeutral = neutralStatus;
+  static const Color statusNeutralBg = neutralStatusSoft;
+
+  static const Color ecoGreen = success;
+  static const Color ecoGreenLight = successSoft;
 }

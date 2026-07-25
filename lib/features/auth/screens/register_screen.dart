@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/result_overlay.dart';
 import '../../../data/providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -44,6 +45,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (success) {
       if (Supabase.instance.client.auth.currentSession != null) {
         await notifier.refreshGuest();
+        if (!mounted) return;
+        await showResultOverlay(
+          context,
+          success: true,
+          title: 'Welcome to La Pirogue',
+          message: 'Your account is ready.',
+        );
         if (!mounted) return;
         context.go('/');
       } else {
@@ -113,7 +121,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       children: [
                         Text(
                           'WELCOME TO',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                          style: AppTypography.captionMedium.copyWith(color: Colors.white.withValues(alpha: 0.85)),
                         ),
                         Text(
                           'La Pirogue',
@@ -221,7 +229,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 height: 22,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                            : const Text('Create Account', style: AppTypography.cardTitle),
                       ),
                     ),
                     const SizedBox(height: 24),

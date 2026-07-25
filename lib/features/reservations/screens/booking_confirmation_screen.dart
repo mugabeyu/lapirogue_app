@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/models/reservation.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 
 class BookingConfirmationScreen extends StatelessWidget {
   final String reservationId;
@@ -71,18 +72,14 @@ class BookingConfirmationScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Reservation Confirmed!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkNavy,
-                  ),
+                  style: AppTypography.heading.copyWith(color: AppColors.darkNavy),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Your room has been successfully booked.',
-                  style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                  style: AppTypography.body.copyWith(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 28),
                 Container(
@@ -117,20 +114,14 @@ class BookingConfirmationScreen extends StatelessWidget {
                             ),
                             child: Text(
                               reservation?.status ?? 'RESERVED',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.statusConfirmed,
-                              ),
+                              style: AppTypography.small.copyWith(fontWeight: FontWeight.w700, color: AppColors.statusConfirmed),
                             ),
                           ),
                           const Spacer(),
                           Text(
                             '#${reservation?.reservationId ?? (reservationId.length > 8 ? reservationId.substring(0, 8) : reservationId)}',
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: AppTypography.small.copyWith(
                               color: AppColors.textTertiary,
-                              fontFamily: 'monospace',
                             ),
                           ),
                         ],
@@ -254,20 +245,12 @@ class BookingConfirmationScreen extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
+              style: AppTypography.small.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 2),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
             ),
           ],
         ),

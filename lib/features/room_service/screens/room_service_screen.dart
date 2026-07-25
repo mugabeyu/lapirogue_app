@@ -218,7 +218,7 @@ class _RoomServiceCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                  Text(item.name, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 3),
                   Text(
                     item.description?.trim().isNotEmpty == true
@@ -226,15 +226,12 @@ class _RoomServiceCard extends StatelessWidget {
                         : 'Delivered fresh to your room.',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                    style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     !item.isAvailable ? 'Currently unavailable' : '${item.preparationMinutes} min prep',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: !item.isAvailable ? AppColors.statusCancelled : AppColors.textTertiary,
-                    ),
+                    style: AppTypography.small.copyWith(color: !item.isAvailable ? AppColors.statusCancelled : AppColors.textTertiary),
                   ),
                 ],
               ),
@@ -244,7 +241,7 @@ class _RoomServiceCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('MUR ${item.price.toStringAsFixed(0)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                Text('MUR ${item.price.toStringAsFixed(0)}', style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: item.isAvailable ? onOrder : null,

@@ -112,13 +112,9 @@ class _SpaScreenState extends ConsumerState<SpaScreen> {
                                   children: [
                                     const Icon(Icons.spa, color: Colors.white, size: 56),
                                     const SizedBox(height: 8),
-                                    const Text(
+                                    Text(
                                       'Serenity Spa',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      style: AppTypography.heading.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
                                     ),
                                     Text(
                                       'Find your inner peace',
@@ -164,12 +160,9 @@ class _SpaScreenState extends ConsumerState<SpaScreen> {
                                 ),
                               ),
                             const SizedBox(height: 24),
-                            const Text(
+                            Text(
                               'Facilities',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 12),
                             Wrap(
@@ -309,10 +302,7 @@ class _SpaScreenState extends ConsumerState<SpaScreen> {
                     ),
                     child: const Text(
                       'Book Treatment',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTypography.bodyMedium,
                     ),
                   ),
                 ),

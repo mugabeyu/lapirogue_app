@@ -12,6 +12,7 @@ import '../../../core/services/schedule_service.dart';
 import '../../../core/services/session_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/reservation_status.dart';
+import '../../../core/theme/app_typography.dart';
 
 String formatDate(DateTime date) {
   return DateFormat('MMM dd, yyyy').format(date);
@@ -63,9 +64,9 @@ class ReservationsScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.hotel, size: 60, color: AppColors.darkNavy),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Sign in to view your reservations',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -142,12 +143,9 @@ class ReservationsScreen extends ConsumerWidget {
                           color: AppColors.darkNavy,
                         ),
                         const SizedBox(height: 24),
-                        const Text(
+                        Text(
                           'No Reservations Yet',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -194,11 +192,7 @@ class ReservationsScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 'Ref: ${shortRef(reservation.reservationId)}',
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -208,11 +202,7 @@ class ReservationsScreen extends ConsumerWidget {
                                 ),
                                 child: Text(
                                   statusInfo.label,
-                                  style: TextStyle(
-                                    color: statusInfo.color,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
-                                  ),
+                                  style: AppTypography.small.copyWith(color: statusInfo.color, fontWeight: FontWeight.w700),
                                 ),
                               ),
                             ],
@@ -236,19 +226,13 @@ class ReservationsScreen extends ConsumerWidget {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
+                                        Text(
                                           'Check-in',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
-                                          ),
+                                          style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                                         ),
                                         Text(
                                           formatDate(reservation.checkIn),
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: AppTypography.captionMedium,
                                         ),
                                       ],
                                     ),
@@ -258,19 +242,13 @@ class ReservationsScreen extends ConsumerWidget {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
+                                        Text(
                                           'Check-out',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppColors.textSecondary,
-                                          ),
+                                          style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                                         ),
                                         Text(
                                           formatDate(reservation.checkOut),
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: AppTypography.captionMedium,
                                         ),
                                       ],
                                     ),
@@ -288,7 +266,7 @@ class ReservationsScreen extends ConsumerWidget {
                                   const SizedBox(width: 12),
                                   Text(
                                     '${reservation.adults} Adult${reservation.adults != 1 ? 's' : ''} ${reservation.children > 0 ? '• ${reservation.children} Child${reservation.children != 1 ? 'ren' : ''}' : ''}',
-                                    style: const TextStyle(fontSize: 14),
+                                    style: AppTypography.caption,
                                   ),
                                 ],
                               ),
@@ -306,7 +284,7 @@ class ReservationsScreen extends ConsumerWidget {
                                       reservation.room != null
                                           ? 'Room ${reservation.room!.roomNumber} - ${reservation.room!.type}'
                                           : 'Room assignment pending',
-                                      style: const TextStyle(fontSize: 14),
+                                      style: AppTypography.caption,
                                     ),
                                   ),
                                 ],
@@ -322,11 +300,7 @@ style: TextStyle(color: AppColors.textSecondary),
                                   ),
                                   Text(
                                     'MUR ${reservation.totalAmount.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.darkNavy,
-                                    ),
+                                    style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.w700, color: AppColors.darkNavy),
                                   ),
                                 ],
                               ),
@@ -522,10 +496,10 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
           children: [
             const Icon(Icons.event_note, color: AppColors.darkNavy, size: 20),
             const SizedBox(width: 8),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Daily Schedule',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
             TextButton(
@@ -549,20 +523,12 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
                 const SizedBox(width: 10),
                 Text(
                   '$_ecoPointsBalance',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.statusConfirmed,
-                  ),
+                  style: AppTypography.heading.copyWith(fontWeight: FontWeight.w800, color: AppColors.statusConfirmed),
                 ),
                 const SizedBox(width: 6),
-                const Text(
+                Text(
                   'Eco Points Earned',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.statusConfirmed,
-                  ),
+                  style: AppTypography.captionMedium.copyWith(color: AppColors.statusConfirmed),
                 ),
               ],
             ),
@@ -624,41 +590,27 @@ class _DailyScheduleSectionState extends State<_DailyScheduleSection> {
                         children: [
                           Text(
                             DateFormat('MMM d, HH:mm').format(item.startAt),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppTypography.small.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                           ),
                           const Spacer(),
                           Text(
                             item.status,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: completed
+                            style: AppTypography.overline.copyWith(color: completed
                                   ? AppColors.statusConfirmed
-                                  : AppColors.darkNavy,
-                            ),
+                                  : AppColors.darkNavy),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text(
                         item.title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.w700),
                       ),
                       if (item.location?.isNotEmpty == true) ...[
                         const SizedBox(height: 4),
                         Text(
                           item.location!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
+                          style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                         ),
                       ],
                       if (completable) ...[

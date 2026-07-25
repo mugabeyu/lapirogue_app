@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/content_service.dart';
+import '../../../core/widgets/result_overlay.dart';
+import '../../../core/theme/app_typography.dart';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -85,10 +87,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thank you for your feedback!'), backgroundColor: AppTheme.accentGreen),
+        await showResultOverlay(
+          context,
+          success: true,
+          title: 'Thank you for your review',
+          message: 'Your feedback goes straight to our team.',
         );
-        Navigator.pop(context);
+        if (mounted) Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -115,7 +120,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('How would you rate your experience?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const Text('How would you rate your experience?', style: AppTypography.cardTitle),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -131,7 +136,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 }),
               ),
               const SizedBox(height: 24),
-              const Text('Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const Text('Category', style: AppTypography.cardTitle),
               const SizedBox(height: 8),
               _isLoadingCategories
                   ? const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
@@ -152,7 +157,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       }).toList(),
                     ),
               const SizedBox(height: 24),
-              const Text('Your Feedback', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const Text('Your Feedback', style: AppTypography.cardTitle),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _commentController,
@@ -180,7 +185,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   onPressed: _isSubmitting ? null : _submitFeedback,
                   child: _isSubmitting
                       ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                      : const Text('Submit Feedback', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      : Text('Submit Feedback', style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

@@ -29,13 +29,9 @@ import '../../features/feedback/screens/feedback_screen.dart';
 import '../../features/hotel_info/screens/hotel_info_screen.dart';
 import '../../features/schedule/screens/daily_schedule_screen.dart';
 import '../../features/payments/screens/payments_screen.dart';
-import '../../features/profile/screens/payment_methods_screen.dart';
 import '../../features/profile/screens/update_password_screen.dart';
 import '../../features/profile/screens/eco_points_screen.dart';
 import '../../features/profile/screens/settings_screen.dart';
-import '../../features/profile/screens/privacy_screen.dart';
-import '../../features/profile/screens/help_screen.dart';
-import '../../features/profile/screens/contact_support_screen.dart';
 
 import '../../data/providers/auth_provider.dart';
 import '../theme/app_colors.dart';
@@ -44,7 +40,8 @@ class _AuthRefreshNotifier extends ChangeNotifier {
   _AuthRefreshNotifier(Ref ref) {
     ref.listen<AuthState>(authStateProvider, (previous, next) {
       if (previous?.isAuthenticated != next.isAuthenticated ||
-          previous?.needsOnboarding != next.needsOnboarding) {
+          previous?.needsOnboarding != next.needsOnboarding ||
+          previous?.isRecoveringPassword != next.isRecoveringPassword) {
         notifyListeners();
       }
     });
@@ -75,7 +72,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
-          state.matchedLocation == '/forgot-password';
+          state.matchedLocation == '/forgot-password' ||
+          state.matchedLocation == '/reset-password' ||
+          state.matchedLocation == '/email-verification';
+
+      // Verifying a recovery code hands back a real Supabase session before a
+      // new password exists. Until that password is set the guest is not
+      // signed in, so pin them to the reset screen rather than letting the
+      // session carry them into the app.
+      if (authState.isRecoveringPassword) {
+        return state.matchedLocation == '/reset-password'
+            ? null
+            : '/reset-password';
+      }
 
       if (!isLoggedIn && isAuthRoute) return null;
       if (isLoggedIn && isAuthRoute) return '/';
@@ -275,26 +284,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/settings',
 
         builder: (context, state) => const SettingsScreen(),
-      ),
-      GoRoute(
-        path: '/payment-methods',
-        
-        builder: (context, state) => const PaymentMethodsScreen(),
-      ),
-      GoRoute(
-        path: '/privacy',
-        
-        builder: (context, state) => const PrivacyScreen(),
-      ),
-      GoRoute(
-        path: '/help',
-        
-        builder: (context, state) => const HelpScreen(),
-      ),
-      GoRoute(
-        path: '/contact-support',
-        
-        builder: (context, state) => const ContactSupportScreen(),
       ),
     ],
   );

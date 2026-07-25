@@ -289,7 +289,7 @@ class _ActiveOrderCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     _summary,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: AppTypography.captionMedium,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -301,7 +301,7 @@ class _ActiveOrderCard extends StatelessWidget {
                   ),
                   child: Text(
                     order.status[0] + order.status.substring(1).toLowerCase(),
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _statusColor),
+                    style: AppTypography.overline.copyWith(color: _statusColor),
                   ),
                 ),
               ],
@@ -311,7 +311,7 @@ class _ActiveOrderCard extends StatelessWidget {
               children: [
                 Text(
                   'MUR ${order.total.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
               ],
             ),
@@ -376,7 +376,7 @@ class _DiningCard extends StatelessWidget {
                 children: [
                   Text(
                     item.name,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -385,15 +385,12 @@ class _DiningCard extends StatelessWidget {
                         : 'Prepared fresh by our culinary team.',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                    style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     !item.isAvailable ? 'Currently unavailable' : '${item.preparationMinutes} min prep',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: !item.isAvailable ? AppColors.statusCancelled : AppColors.textTertiary,
-                    ),
+                    style: AppTypography.small.copyWith(color: !item.isAvailable ? AppColors.statusCancelled : AppColors.textTertiary),
                   ),
                 ],
               ),
@@ -405,7 +402,7 @@ class _DiningCard extends StatelessWidget {
               children: [
                 Text(
                   'MUR ${item.price.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
                 GestureDetector(

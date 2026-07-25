@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 
 class BookingCard extends StatefulWidget {
   final DateTime checkIn;
@@ -111,11 +112,11 @@ class _BookingCardState extends State<BookingCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+            Text(label, style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: 4),
             Text(
               DateFormat('dd/MM/yyyy').format(date),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              style: AppTypography.captionMedium.copyWith(color: AppColors.textPrimary),
             ),
           ],
         ),

@@ -10,6 +10,7 @@ import '../../../core/services/storage_service.dart';
 import '../../../core/services/activity_service.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/reservation_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -54,7 +55,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             children: [
               Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.lightGray2, borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 20),
-              const Text('Profile Photo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              Text('Profile Photo', style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: AppColors.primary),
@@ -154,7 +155,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Image.asset('assets/images/lapirogue_logo.jpg', height: 90, fit: BoxFit.contain),
                 ),
                 const SizedBox(height: 24),
-                const Text('My Profile', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+                Text('My Profile', style: AppTypography.heading.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 const Text('Sign in to manage your profile and preferences', style: TextStyle(color: AppColors.textSecondary)),
                 const SizedBox(height: 32),
@@ -216,7 +217,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ? Center(
                               child: Text(
                                 '${guest.firstName[0]}${guest.lastName[0]}',
-                                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+                                style: AppTypography.heading.copyWith(color: Colors.white),
                               ),
                             )
                           : null,
@@ -243,9 +244,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(guest.fullName, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                    Text(guest.fullName, style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
-                    Text(guest.email, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    Text(guest.email, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                     const SizedBox(height: 6),
                     _buildStatusBadge(guest),
                   ],
@@ -297,8 +298,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _buildRow(Icons.calendar_month_outlined, 'Member Since', guest.createdAt != null ? DateFormat('MMM dd, yyyy').format(guest.createdAt!) : 'N/A'),
           ]),
           const SizedBox(height: 12),
-          const Center(
-            child: Text('La Pirogue Guest App', style: TextStyle(fontSize: 12, color: AppColors.textTertiary)),
+          Center(
+            child: Text('La Pirogue Guest App', style: AppTypography.small.copyWith(color: AppColors.textTertiary)),
           ),
         ],
       ),
@@ -356,7 +357,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 Icon(Icons.star, size: 12, color: AppColors.statusPending),
                 const SizedBox(width: 3),
-                Text('VIP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.statusPending)),
+                Text('VIP', style: AppTypography.overline.copyWith(color: AppColors.statusPending)),
               ],
             ),
           ),
@@ -368,7 +369,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           child: Text(
             status.replaceAll('_', ' '),
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor),
+            style: AppTypography.overline.copyWith(color: statusColor),
           ),
         ),
       ],
@@ -387,7 +388,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 0.3)),
+            child: Text(title, style: AppTypography.captionMedium.copyWith(color: AppColors.textTertiary)),
           ),
           ...children,
           const SizedBox(height: 4),
@@ -415,9 +416,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+                Text(label, style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                Text(value, style: AppTypography.body.copyWith(fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
               ],
             ),
           ),
@@ -436,7 +437,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         child: Icon(icon, size: 18, color: AppColors.primary),
       ),
-      title: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+      title: Text(label, style: AppTypography.body.copyWith(fontWeight: FontWeight.w500)),
       trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -460,9 +461,9 @@ class _StatBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          Text(value, style: AppTypography.sectionTitle.copyWith(color: AppColors.textPrimary)),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary), textAlign: TextAlign.center),
+          Text(label, style: AppTypography.small.copyWith(color: AppColors.textSecondary), textAlign: TextAlign.center),
         ],
       ),
     );

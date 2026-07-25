@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -81,7 +82,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Welcome!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+              Text('Welcome!', style: AppTypography.heading.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               Text('Tell us about yourself', style: TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: 24),
@@ -115,7 +116,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   child: isLoading
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Complete Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      : const Text('Complete Profile', style: AppTypography.cardTitle),
                 ),
               ),
             ],

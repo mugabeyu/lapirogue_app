@@ -75,7 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         Text(
                           'WELCOME TO',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                          style: AppTypography.captionMedium.copyWith(color: Colors.white.withValues(alpha: 0.85)),
                         ),
                         Text(
                           'La Pirogue',
@@ -207,10 +207,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 )
                               : const Text(
                                   'Sign In',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: AppTypography.cardTitle,
                                 ),
                         ),
                       ),
@@ -236,11 +233,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Expanded(
                           child: Text(
                             authState.error!,
-                            style: const TextStyle(
-                              color: AppColors.statusCancelled,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppTypography.captionMedium.copyWith(color: AppColors.statusCancelled),
                           ),
                         ),
                       ],

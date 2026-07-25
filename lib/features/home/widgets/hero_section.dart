@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/notifications_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 /// Minimal, reference-matching home header: "Bonjour, {name}" greeting on
 /// the left, notification bell (with unread badge) on the right.
@@ -65,14 +66,9 @@ class HeroSection extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'La Pirogue Hotel',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                    letterSpacing: 0.3,
-                  ),
+                  style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
               ],
             ),
@@ -86,19 +82,12 @@ class HeroSection extends ConsumerWidget {
                 children: [
                   Text(
                     _timeGreeting(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     name,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppTypography.heading.copyWith(color: AppColors.textPrimary),
                   ),
                 ],
               ),
@@ -141,11 +130,7 @@ class HeroSection extends ConsumerWidget {
                             child: Center(
                               child: Text(
                                 unreadCount > 9 ? '9+' : '$unreadCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: AppTypography.overline.copyWith(color: Colors.white),
                               ),
                             ),
                           ),
@@ -171,11 +156,7 @@ class HeroSection extends ConsumerWidget {
                         ? Center(
                             child: Text(
                               _initials,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
+                              style: AppTypography.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                             ),
                           )
                         : null,

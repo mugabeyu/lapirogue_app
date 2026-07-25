@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/widgets/auth_scaffold.dart';
+import '../../../core/theme/app_typography.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -51,23 +53,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reset Password'),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Form(
+    return AuthScaffold(
+      title: 'Reset Password',
+      child: Form(
             key: _formKey,
             child: Column(
               children: [
-                const SizedBox(height: 40),
                 Container(
                   width: 80,
                   height: 80,
@@ -82,21 +73,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Forgot Your Password?',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: AppTypography.heading.copyWith(color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "Enter your email and we'll send you a 6-digit code to reset your password",
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                  ),
+                  style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -115,7 +99,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: const TextStyle(color: AppColors.statusCancelled, fontSize: 13, fontWeight: FontWeight.w600),
+                            style: AppTypography.captionMedium.copyWith(color: AppColors.statusCancelled),
                           ),
                         ),
                       ],
@@ -165,7 +149,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           )
                         : const Text(
                             'Send Reset Code',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: AppTypography.cardTitle,
                           ),
                   ),
                 ),
@@ -173,19 +157,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       "Remember your password? ",
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                     ),
                     TextButton(
                       onPressed: () => context.pop(),
-                      child: const Text(
+                      child: Text(
                         'Back to Sign In',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: AppTypography.captionMedium.copyWith(color: AppColors.primary),
                       ),
                     ),
                   ],
@@ -193,8 +173,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ],
             ),
           ),
-        ),
-      ),
     );
   }
 }

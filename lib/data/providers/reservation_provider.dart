@@ -55,6 +55,53 @@ class ReservationState {
 class ReservationNotifier extends StateNotifier<ReservationState> {
   ReservationNotifier() : super(const ReservationState());
 
+  RealtimeChannel? _channel;
+  String? _watchedGuestId;
+
+  /// Keeps the guest's stay in sync with what reception does at the desk.
+  ///
+  /// This listens rather than polls, and re-reads through `loadReservations`
+  /// on every change instead of patching the payload in place — the screens
+  /// need the joined room record, which the change event does not carry.
+  void _watch(String guestId) {
+    if (_watchedGuestId == guestId && _channel != null) return;
+
+    _unwatch();
+    _watchedGuestId = guestId;
+
+    _channel = Supabase.instance.client
+        .channel('guest_reservations_$guestId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'reservations',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'guest_id',
+            value: guestId,
+          ),
+          callback: (_) {
+            if (mounted) loadReservations(guestId);
+          },
+        )
+        .subscribe();
+  }
+
+  void _unwatch() {
+    final channel = _channel;
+    _channel = null;
+    _watchedGuestId = null;
+    if (channel != null) {
+      Supabase.instance.client.removeChannel(channel);
+    }
+  }
+
+  @override
+  void dispose() {
+    _unwatch();
+    super.dispose();
+  }
+
   Reservation? _pickActiveReservation(List<Reservation> reservations) {
     for (final reservation in reservations) {
       if (reservation.status == 'CHECKED_IN') {
@@ -73,6 +120,7 @@ class ReservationNotifier extends StateNotifier<ReservationState> {
   }
 
   Future<void> loadReservations(String guestId) async {
+    _watch(guestId);
     state = state.copyWith(isLoading: true);
     try {
       final response = await Supabase.instance.client
@@ -110,6 +158,7 @@ class ReservationNotifier extends StateNotifier<ReservationState> {
   }
 
   void clear() {
+    _unwatch();
     state = const ReservationState();
   }
 

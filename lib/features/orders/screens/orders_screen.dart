@@ -219,27 +219,18 @@ class _OrderCardState extends State<_OrderCard> {
                           order.orderId.isNotEmpty
                               ? 'Order #${order.orderId}'
                               : 'Order',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
+                          style: AppTypography.bodyMedium,
                         ),
                         if (order.scheduledDate != null && order.scheduledTime != null)
                           Text(
                             'Scheduled: ${DateFormat('MMM dd, yyyy').format(order.scheduledDate!)} – ${_formatTimeDisplay(order.scheduledTime!)}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
+                            style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                           )
                         else if (order.createdAt != null)
                           Text(
                             DateFormat('MMM dd, yyyy – hh:mm a')
                                 .format(order.createdAt!),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
+                            style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                           ),
                       ],
                     ),
@@ -258,11 +249,7 @@ class _OrderCardState extends State<_OrderCard> {
                     ),
                     child: Text(
                       order.status,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: widget.statusColor,
-                      ),
+                      style: AppTypography.small.copyWith(fontWeight: FontWeight.w600, color: widget.statusColor),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -284,23 +271,17 @@ class _OrderCardState extends State<_OrderCard> {
                       Expanded(
                         child: Text(
                           item['name']?.toString() ?? 'Item',
-                          style: const TextStyle(fontSize: 14),
+                          style: AppTypography.caption,
                         ),
                       ),
                       Text(
                         'x${item['quantity'] ?? 1}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'MUR ${(item['price'] ?? 0).toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
+                        style: AppTypography.captionMedium,
                       ),
                     ],
                   ),
@@ -311,18 +292,11 @@ class _OrderCardState extends State<_OrderCard> {
                   children: [
                     Text(
                       'Total',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                     ),
                     Text(
                       'MUR ${order.total.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: AppColors.darkNavy,
-                      ),
+                      style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.w700, color: AppColors.darkNavy),
                     ),
                   ],
                 ),
@@ -330,11 +304,7 @@ class _OrderCardState extends State<_OrderCard> {
                   const SizedBox(height: 8),
                   Text(
                     'Note: ${order.notes}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                      fontStyle: FontStyle.italic,
-                    ),
+                    style: AppTypography.small.copyWith(color: AppColors.textSecondary, fontStyle: FontStyle.italic),
                   ),
                 ],
               ],

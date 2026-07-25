@@ -116,14 +116,14 @@ class _EcoPointsScreenState extends State<EcoPointsScreen> {
                       children: [
                         const Icon(Icons.eco, size: 36, color: AppColors.ecoGreen),
                         const SizedBox(height: 12),
-                        Text('$_balance', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w800, color: AppColors.ecoGreen)),
+                        Text('$_balance', style: AppTypography.displayLarge.copyWith(color: AppColors.ecoGreen)),
                         const SizedBox(height: 4),
-                        const Text('Eco-Points balance', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        Text('Eco-Points balance', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
-                          child: Text('$_tier tier', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ecoGreen)),
+                          child: Text('$_tier tier', style: AppTypography.small.copyWith(fontWeight: FontWeight.w700, color: AppColors.ecoGreen)),
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -133,7 +133,7 @@ class _EcoPointsScreenState extends State<EcoPointsScreen> {
                             const SizedBox(width: 6),
                             Text(
                               '${_carbonOffsetKg.toStringAsFixed(1)}kg CO₂ offset so far',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.ecoGreen),
+                              style: AppTypography.small.copyWith(fontWeight: FontWeight.w600, color: AppColors.ecoGreen),
                             ),
                           ],
                         ),
@@ -145,7 +145,7 @@ class _EcoPointsScreenState extends State<EcoPointsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Each action earns points and a real carbon offset, tracked live for the hotel too.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 12),
                   if (_ecoActions.isEmpty)
@@ -168,12 +168,12 @@ class _EcoPointsScreenState extends State<EcoPointsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(action.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                                    Text(action.name, style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.w700)),
                                     const SizedBox(height: 2),
                                     Text(
                                       '+${action.defaultPoints} pts'
                                       '${action.carbonOffsetKg != null ? ' · ${action.carbonOffsetKg!.toStringAsFixed(1)}kg CO₂' : ''}',
-                                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                      style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                                     ),
                                   ],
                                 ),
@@ -191,7 +191,7 @@ class _EcoPointsScreenState extends State<EcoPointsScreen> {
                                   ),
                                   child: _loggingActionId == action.id
                                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                      : const Text('I did this', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                      : Text('I did this', style: AppTypography.small.copyWith(fontWeight: FontWeight.w600)),
                                 ),
                               ),
                             ],
@@ -228,17 +228,17 @@ class _EcoPointsScreenState extends State<EcoPointsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(t.sourceLabel ?? t.sourceType, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                    Text(t.sourceLabel ?? t.sourceType, style: AppTypography.captionMedium),
                                     if (t.earnedAt != null)
                                       Text(
                                         DateFormat('MMM dd, yyyy').format(t.earnedAt!) +
                                             ((t.carbonOffsetKg ?? 0) > 0 ? ' · ${t.carbonOffsetKg!.toStringAsFixed(1)}kg CO₂' : ''),
-                                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                        style: AppTypography.small.copyWith(color: AppColors.textSecondary),
                                       ),
                                   ],
                                 ),
                               ),
-                              Text('+${t.points}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.ecoGreen)),
+                              Text('+${t.points}', style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.ecoGreen)),
                             ],
                           ),
                         )),

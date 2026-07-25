@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
   const GalleryScreen({super.key});
@@ -63,7 +64,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
                         image.title,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: AppTypography.small.copyWith(fontWeight: FontWeight.w600),
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -159,9 +160,9 @@ class _FullscreenGalleryState extends State<_FullscreenGallery> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Text(image.title, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600)),
+                  Text(image.title, style: AppTypography.heading.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  Text(image.subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14)),
+                  Text(image.subtitle, style: AppTypography.caption.copyWith(color: Colors.white.withValues(alpha: 0.6))),
                 ],
               ),
             ),

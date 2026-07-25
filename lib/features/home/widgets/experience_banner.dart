@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 
 /// Single full-width "explore activities" banner shown on the home screen,
 /// replacing a horizontal list of individual activity cards — matching the
@@ -54,18 +55,18 @@ class ExperienceBanner extends StatelessWidget {
                   children: [
                     Text(
                       'EXPERIENCES',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.5),
+                      style: AppTypography.small.copyWith(color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Sail into a La Pirogue sunset',
-                      style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w700),
+                      style: AppTypography.sectionTitle.copyWith(color: Colors.white),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Explore activities', style: TextStyle(color: Colors.white.withValues(alpha: 0.95), fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text('Explore activities', style: AppTypography.captionMedium.copyWith(color: Colors.white.withValues(alpha: 0.95))),
                         const SizedBox(width: 4),
                         const Icon(Icons.arrow_forward, size: 14, color: Colors.white),
                       ],

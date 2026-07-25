@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/room.dart';
+import '../../../core/theme/app_typography.dart';
 
 class RoomCard extends StatelessWidget {
   final Room room;
@@ -61,7 +62,7 @@ class RoomCard extends StatelessWidget {
                           color: AppColors.goldAccent,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text('Popular', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.white)),
+                        child: Text('Popular', style: AppTypography.small.copyWith(color: Colors.white)),
                       ),
                     ),
                 ],
@@ -75,13 +76,13 @@ class RoomCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(room.roomNumber, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+                        child: Text(room.roomNumber, style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
                       ),
                       Row(
                         children: [
                           Icon(Icons.star, size: 14, color: AppColors.goldAccent),
                           const SizedBox(width: 2),
-                          Text(_rating.toStringAsFixed(1), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+                          Text(_rating.toStringAsFixed(1), style: AppTypography.caption.copyWith(fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
                         ],
                       ),
                     ],
@@ -105,8 +106,8 @@ class RoomCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Price per night', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                          Text('MUR ${room.price.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.darkNavy)),
+                          Text('Price per night', style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
+                          Text('MUR ${room.price.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}', style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600, color: AppColors.darkNavy)),
                         ],
                       ),
                       ElevatedButton(
@@ -116,7 +117,7 @@ class RoomCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                        child: const Text('View Details', style: AppTypography.small),
                       ),
                     ],
                   ),
@@ -135,7 +136,7 @@ class RoomCard extends StatelessWidget {
       children: [
         Icon(icon, size: 13, color: AppColors.textTertiary),
         const SizedBox(width: 3),
-        Text(text, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+        Text(text, style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
       ],
     );
   }

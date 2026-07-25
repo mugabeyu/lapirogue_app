@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -9,64 +11,112 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          AppTheme.space2,
+          AppTheme.screenPadding,
+          AppTheme.space8,
+        ),
         children: [
-          _section('Account', [
-            _item(context, Icons.lock_outline, 'Update password', '/update-password'),
-            _item(context, Icons.credit_card_outlined, 'Payment methods', '/payment-methods'),
-            _item(context, Icons.privacy_tip_outlined, 'Privacy', '/privacy'),
-          ]),
-          const SizedBox(height: 12),
-          _section('Feedback & support', [
-            _item(context, Icons.star_outline, 'Leave a review', '/feedback'),
-            _item(context, Icons.help_outline, 'Help & support', '/help'),
-            _item(context, Icons.support_agent_outlined, 'Contact support', '/contact-support'),
-          ]),
+          const _SectionLabel('Account'),
+          _SettingsGroup(
+            children: [
+              _SettingsItem(
+                icon: Icons.lock_outline_rounded,
+                label: 'Update password',
+                route: '/update-password',
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.space6),
+          const _SectionLabel('Feedback'),
+          _SettingsGroup(
+            children: [
+              _SettingsItem(
+                icon: Icons.star_outline_rounded,
+                label: 'Leave a review',
+                route: '/feedback',
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _section(String title, List<Widget> children) {
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.space1,
+        AppTheme.space4,
+        AppTheme.space1,
+        AppTheme.space3,
+      ),
+      child: Text(text.toUpperCase(), style: AppTypography.overline),
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  final List<Widget> children;
+  const _SettingsGroup({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightGray2),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textTertiary, letterSpacing: 0.3)),
-          ),
-          ...children,
-          const SizedBox(height: 4),
-        ],
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
     );
   }
+}
 
-  Widget _item(BuildContext context, IconData icon, String label, String route) {
+class _SettingsItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String route;
+
+  const _SettingsItem({
+    required this.icon,
+    required this.label,
+    required this.route,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: AppColors.lightGray, borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, size: 18, color: AppColors.primary),
-      ),
-      title: Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
       onTap: () => context.push(route),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      leading: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: AppColors.primarySoft,
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+        ),
+        child: Icon(icon, size: 19, color: AppColors.primary),
+      ),
+      title: Text(label, style: AppTypography.bodyMedium),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.textTertiary,
+        size: 22,
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.space4,
+        vertical: AppTheme.space2,
+      ),
     );
   }
 }

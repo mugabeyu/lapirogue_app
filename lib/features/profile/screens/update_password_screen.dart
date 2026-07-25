@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/result_overlay.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 /// Lets a signed-in guest change their password. For security we
 /// re-authenticate with the current password before applying the new one.
@@ -62,13 +64,13 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password updated successfully'),
-          backgroundColor: AppColors.statusConfirmed,
-          behavior: SnackBarBehavior.floating,
-        ),
+      await showResultOverlay(
+        context,
+        success: true,
+        title: 'Password updated',
+        message: 'Use your new password the next time you sign in.',
       );
+      if (!mounted) return;
       context.pop();
     } on AuthException catch (e) {
       setState(() {
@@ -113,14 +115,14 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                   child: const Icon(Icons.lock_outline, color: AppColors.primary, size: 34),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Change your password',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: AppTypography.heading.copyWith(color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Enter your current password and choose a new one.',
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+                  style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 28),
                 if (_errorMessage != null)
@@ -140,11 +142,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: const TextStyle(
-                              color: AppColors.statusCancelled,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppTypography.captionMedium.copyWith(color: AppColors.statusCancelled),
                           ),
                         ),
                       ],
@@ -216,7 +214,7 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                             height: 24,
                             child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                           )
-                        : const Text('Update Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        : const Text('Update Password', style: AppTypography.cardTitle),
                   ),
                 ),
               ],

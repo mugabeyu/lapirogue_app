@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../widgets/app_ui.dart';
 
 /// Guest-facing label/color for a raw backend reservation status.
 ///
-/// Guests can only ever create a reservation (landing as RESERVED) — only
-/// hotel staff move it through CONFIRMED / CHECKED_IN / CHECKED_OUT. To the
-/// guest, a freshly-made booking hasn't been actioned by staff yet, so
-/// RESERVED is shown as "Pending" rather than exposing the internal name.
+/// A booking that has been made is "Reserved" — that is what the guest did and
+/// what reception sees, so both apps say the same word. It used to render as
+/// "Pending", which read as though the booking had not gone through.
+///
+/// CONFIRMED is treated as the same thing: it only survives on older rows and
+/// is no longer a status staff can set.
 class ReservationStatusInfo {
   final String label;
   final Color color;
@@ -14,12 +17,21 @@ class ReservationStatusInfo {
 
   const ReservationStatusInfo(this.label, this.color, this.backgroundColor);
 
+  /// Lets a status drive a [StatusPill] without each screen mapping the
+  /// colours itself.
+  StatusTone get tone {
+    if (color == AppColors.success) return StatusTone.success;
+    if (color == AppColors.warning) return StatusTone.warning;
+    if (color == AppColors.danger) return StatusTone.danger;
+    if (color == AppColors.info) return StatusTone.info;
+    return StatusTone.neutral;
+  }
+
   factory ReservationStatusInfo.forStatus(String status) {
     switch (status.toUpperCase()) {
       case 'RESERVED':
-        return ReservationStatusInfo('Pending', AppColors.statusPending, AppColors.statusPendingBg);
       case 'CONFIRMED':
-        return ReservationStatusInfo('Confirmed', AppColors.statusConfirmed, AppColors.statusConfirmedBg);
+        return ReservationStatusInfo('Reserved', AppColors.statusConfirmed, AppColors.statusConfirmedBg);
       case 'CHECKED_IN':
         return ReservationStatusInfo('Checked In', AppColors.statusInfo, AppColors.statusInfoBg);
       case 'CHECKED_OUT':

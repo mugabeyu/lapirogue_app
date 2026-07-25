@@ -43,7 +43,7 @@ class CurrentStayCard extends StatelessWidget {
                 ),
                 child: Text(
                   statusInfo.label,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: statusInfo.color),
+                  style: AppTypography.small.copyWith(fontWeight: FontWeight.w700, color: statusInfo.color),
                 ),
               ),
             ],
@@ -91,7 +91,7 @@ class CurrentStayCard extends StatelessWidget {
                         ),
                         child: Text(
                           roomNumber,
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                          style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
                         ),
                       ),
                     ),
@@ -103,7 +103,7 @@ class CurrentStayCard extends StatelessWidget {
                     children: [
                       Icon(Icons.calendar_month_outlined, size: 14, color: AppColors.textSecondary),
                       const SizedBox(width: 6),
-                      Text('$checkInStr \u2013 $checkOutStr \u00b7 $nights nights', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      Text('$checkInStr \u2013 $checkOutStr \u00b7 $nights nights', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                       const Spacer(),
                       const Icon(Icons.arrow_forward, size: 16, color: AppColors.primary),
                     ],

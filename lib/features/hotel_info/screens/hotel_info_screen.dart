@@ -3,6 +3,7 @@ import '../../../core/services/content_service.dart';
 import '../../../core/models/site_content_page.dart';
 import '../../../core/models/hotel_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
 
 class HotelInfoScreen extends StatefulWidget {
   const HotelInfoScreen({super.key});
@@ -105,7 +106,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
             const SizedBox(height: 16),
             Text(
               'Hotel information coming soon',
-              style: TextStyle(fontSize: 16, color: AppTheme.textTertiary),
+              style: AppTypography.bodyLarge.copyWith(color: AppTheme.textTertiary),
             ),
           ],
         ),
@@ -138,11 +139,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                 Center(
                   child: Text(
                     info.title,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
-                    ),
+                    style: AppTypography.display.copyWith(fontWeight: FontWeight.bold, color: AppTheme.primary),
                   ),
                 ),
                 if (info.subtitle != null && info.subtitle!.isNotEmpty) ...[
@@ -150,7 +147,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                   Center(
                     child: Text(
                       info.subtitle!,
-                      style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
+                      style: AppTypography.bodyLarge.copyWith(color: AppTheme.textSecondary),
                     ),
                   ),
                 ],
@@ -158,7 +155,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                   const SizedBox(height: 20),
                   Text(
                     info.body!,
-                    style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.6),
+                    style: AppTypography.caption.copyWith(color: AppTheme.textSecondary),
                   ),
                 ],
                 if (info.highlights.isNotEmpty) ...[
@@ -189,7 +186,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                             Expanded(
                               child: Text(
                                 h.toString(),
-                                style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                                style: AppTypography.caption.copyWith(color: AppTheme.textSecondary),
                               ),
                             ),
                           ],
@@ -217,12 +214,12 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                             children: [
                               Text(
                                 m['label']?.toString() ?? '',
-                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                style: AppTypography.small.copyWith(color: AppTheme.textSecondary),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 m['value']?.toString() ?? '',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                                style: AppTypography.sectionTitle.copyWith(color: AppTheme.primary),
                               ),
                             ],
                           ),
@@ -240,18 +237,18 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                             children: [
                               Text(
                                 parts[0].trim(),
-                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                style: AppTypography.small.copyWith(color: AppTheme.textSecondary),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 parts[1].trim(),
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                                style: AppTypography.sectionTitle.copyWith(color: AppTheme.primary),
                               ),
                             ],
                           ),
                         );
                       }
-                      return Text(m.toString(), style: const TextStyle(fontSize: 14));
+                      return Text(m.toString(), style: AppTypography.caption);
                     }).toList(),
                   ),
                 ],
@@ -271,7 +268,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
         children: [
           const Text(
             'Hotel Services',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: AppTypography.sectionTitle,
           ),
           const SizedBox(height: 12),
           Card(
@@ -292,9 +289,9 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(service.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              Text(service.name, style: AppTypography.captionMedium),
                               if (service.description != null && service.description!.isNotEmpty)
-                                Text(service.description!, style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+                                Text(service.description!, style: AppTypography.caption.copyWith(color: AppTheme.textSecondary)),
                               if (service.phoneNumber != null && service.phoneNumber!.isNotEmpty)
                                 _buildDetailRow(Icons.phone, service.phoneNumber!),
                               if (service.email != null && service.email!.isNotEmpty)
@@ -325,7 +322,7 @@ class _HotelInfoScreenState extends State<HotelInfoScreen> {
         children: [
           Icon(icon, size: 14, color: AppTheme.textTertiary),
           const SizedBox(width: 6),
-          Text(text, style: TextStyle(fontSize: 13, color: AppTheme.textTertiary)),
+          Text(text, style: AppTypography.caption.copyWith(color: AppTheme.textTertiary)),
         ],
       ),
     );

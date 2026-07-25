@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 
 /// Row of quick-access shortcuts to existing app sections, matching the
 /// reference design's "Book a room / Order food / Activities / Messages"
@@ -43,11 +44,7 @@ class QuickActionsRow extends StatelessWidget {
                       Text(
                         a.label,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
-                        ),
+                        style: AppTypography.small.copyWith(color: AppColors.textPrimary),
                       ),
                     ],
                   ),

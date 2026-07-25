@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/models/reservation.dart';
 import '../../../core/utils/reservation_status.dart';
 
@@ -119,7 +120,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (room != null)
-                              Text('Room ${room.roomNumber}', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                              Text('Room ${room.roomNumber}', style: AppTypography.caption.copyWith(color: Colors.white)),
                             Text(
                               room?.type ?? 'Reservation',
                               style: AppTypography.sectionTitle.copyWith(color: Colors.white),
@@ -130,7 +131,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(color: statusInfo.backgroundColor, borderRadius: BorderRadius.circular(999)),
-                        child: Text(statusInfo.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: statusInfo.color)),
+                        child: Text(statusInfo.label, style: AppTypography.small.copyWith(fontWeight: FontWeight.w700, color: statusInfo.color)),
                       ),
                     ],
                   ),
@@ -143,7 +144,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('LP-${reservation.reservationId.isNotEmpty ? reservation.reservationId : reservation.id.substring(0, 8)}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                Text('LP-${reservation.reservationId.isNotEmpty ? reservation.reservationId : reservation.id.substring(0, 8)}', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -176,7 +177,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                       children: [
                         const Icon(Icons.info_outline, size: 18, color: AppColors.primary),
                         const SizedBox(width: 10),
-                        Expanded(child: Text(reservation.notes!, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary))),
+                        Expanded(child: Text(reservation.notes!, style: AppTypography.caption.copyWith(color: AppColors.textPrimary))),
                       ],
                     ),
                   ),
@@ -210,11 +211,11 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Cancellation policy', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                      Text('Cancellation policy', style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.w700)),
                       const SizedBox(height: 6),
                       Text(
                         'Free cancellation up to 48 hours before check-in. After that, the first night is non-refundable. To cancel or change this reservation, please contact the front desk.',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                        style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -242,11 +243,11 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
             children: [
               Icon(icon, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 6),
-              Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text(label, style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
             ],
           ),
           const SizedBox(height: 6),
-          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          Text(value, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         ],
       ),
     );
@@ -257,9 +258,9 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
       children: [
         Icon(icon, size: 16, color: AppColors.textSecondary),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        Text(label, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
         const Spacer(),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        Text(value, style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
       ],
     );
   }
@@ -270,11 +271,15 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: isTotal ? 15 : 14, fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400, color: AppColors.textPrimary),
+          // The total steps up a level in the scale so it reads as the sum of
+          // the lines above it rather than another line item.
+          style: isTotal ? AppTypography.bodyMedium : AppTypography.body,
         ),
         Text(
-          'MUR ${amount.toStringAsFixed(0)}',
-          style: TextStyle(fontSize: isTotal ? 17 : 14, fontWeight: FontWeight.w700, color: isTotal ? AppColors.primary : AppColors.textPrimary),
+          formatMoney(amount),
+          style: isTotal
+              ? AppTypography.priceSmall.copyWith(color: AppColors.primary)
+              : AppTypography.captionMedium,
         ),
       ],
     );

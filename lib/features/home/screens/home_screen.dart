@@ -83,7 +83,7 @@ SliverToBoxAdapter(
                   const Text('Featured Rooms', style: AppTypography.sectionTitle),
                   TextButton(
                     onPressed: () => context.push('/rooms'),
-                    child: const Text('View All', style: TextStyle(fontSize: 13, color: AppColors.goldAccent, fontWeight: FontWeight.w500)),
+                    child: Text('View All', style: AppTypography.caption.copyWith(color: AppColors.goldAccent, fontWeight: FontWeight.w500)),
                   ),
                 ],
               ),
@@ -130,7 +130,7 @@ SliverToBoxAdapter(
                   const Text('Food & Drinks', style: AppTypography.sectionTitle),
                   TextButton(
                     onPressed: () => context.push('/dining'),
-                    child: const Text('View All', style: TextStyle(fontSize: 13, color: AppColors.goldAccent, fontWeight: FontWeight.w500)),
+                    child: Text('View All', style: AppTypography.caption.copyWith(color: AppColors.goldAccent, fontWeight: FontWeight.w500)),
                   ),
                 ],
               ),

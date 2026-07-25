@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/room.dart';
 import '../../../data/providers/hotel_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 class RoomsListScreen extends ConsumerStatefulWidget {
   const RoomsListScreen({super.key});
@@ -189,7 +190,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+            Text(label, style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -198,7 +199,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                 const SizedBox(width: 6),
                 Text(
                   DateFormat('MMM dd').format(date),
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  style: AppTypography.bodyMedium,
                 ),
               ],
             ),
@@ -216,9 +217,9 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
           children: [
             Icon(Icons.calendar_month, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
-            Text('Select your dates', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+            Text('Select your dates', style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
             const SizedBox(height: 8),
-            Text('Choose check-in and check-out dates\nto see available rooms', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            Text('Choose check-in and check-out dates\nto see available rooms', textAlign: TextAlign.center, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -235,9 +236,9 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
           children: [
             Icon(Icons.hotel, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
-            Text('No rooms available', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+            Text('No rooms available', style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
             const SizedBox(height: 8),
-            Text('Try different dates', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            Text('Try different dates', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -269,13 +270,13 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
         children: [
           Icon(Icons.sort, size: 16, color: AppColors.textSecondary),
           const SizedBox(width: 6),
-          Text('Sort by', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Text('Sort by', style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
           const SizedBox(width: 8),
           DropdownButton<_SortOrder>(
             value: _sortOrder,
             isDense: true,
             underline: const SizedBox(),
-            style: TextStyle(fontSize: 13, color: AppColors.darkNavy, fontWeight: FontWeight.w500),
+            style: AppTypography.caption.copyWith(color: AppColors.darkNavy, fontWeight: FontWeight.w500),
             items: const [
               DropdownMenuItem(value: _SortOrder.priceLowToHigh, child: Text('Price (Low to High)')),
               DropdownMenuItem(value: _SortOrder.priceHighToLow, child: Text('Price (High to Low)')),
@@ -331,7 +332,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Text(room.type, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    child: Text(room.type, style: AppTypography.overline.copyWith(color: AppColors.primary)),
                   ),
                 ),
               ],
@@ -348,17 +349,17 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Room ${room.roomNumber}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                            Text('Room ${room.roomNumber}', style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 2),
-                            Text(room.type, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                            Text(room.type, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                           ],
                         ),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('MUR ${NumberFormat('#,###').format(room.price.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.textPrimary)),
-                          Text('per night', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          Text('MUR ${NumberFormat('#,###').format(room.price.toInt())}', style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                          Text('per night', style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
                         ],
                       ),
                     ],
@@ -368,7 +369,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                     children: [
                       const Icon(Icons.people_outline, size: 15, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
-                      Text('Up to ${room.capacity} guests', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      Text('Up to ${room.capacity} guests', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                     ],
                   ),
                   if (room.amenities.isNotEmpty) ...[
@@ -381,7 +382,7 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                           color: AppColors.lightGray,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(a, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                        child: Text(a, style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
                       )).toList(),
                     ),
                   ],
@@ -395,8 +396,8 @@ class _RoomsListScreenState extends ConsumerState<RoomsListScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('$nights nights', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                        Text('MUR ${NumberFormat('#,###').format(totalPrice.toInt())}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.primary)),
+                        Text('$nights nights', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                        Text('MUR ${NumberFormat('#,###').format(totalPrice.toInt())}', style: AppTypography.cardTitle.copyWith(fontWeight: FontWeight.w700, color: AppColors.primary)),
                       ],
                     ),
                   ),

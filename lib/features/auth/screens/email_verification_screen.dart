@@ -9,10 +9,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/error_messages.dart';
+import '../../../core/widgets/auth_scaffold.dart';
 import '../../../core/widgets/otp_input_row.dart';
 import '../../../core/widgets/result_overlay.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/reservation_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   final String email;
@@ -201,21 +203,10 @@ class _EmailVerificationScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Verify Email'),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
+    return AuthScaffold(
+      title: 'Verify Email',
+      child: Column(
             children: [
-              const SizedBox(height: 12),
               Container(
                 width: 88,
                 height: 88,
@@ -234,11 +225,7 @@ class _EmailVerificationScreenState
                 _isReservationVerification
                     ? 'Confirm your reservation'
                     : 'Check your email',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppTypography.heading.copyWith(color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
               Text(
@@ -246,11 +233,7 @@ class _EmailVerificationScreenState
                     ? 'We sent a 6-digit code to\n${widget.email}\nto confirm your room reservation.'
                     : 'We sent a 6-digit code to\n${widget.email}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
+                style: AppTypography.body.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 32),
               Form(
@@ -284,17 +267,14 @@ class _EmailVerificationScreenState
                           _isReservationVerification
                               ? 'Confirm Reservation'
                               : 'Verify & Continue',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTypography.cardTitle,
                         ),
                 ),
               ),
               const SizedBox(height: 20),
               Text(
                 'Code expires in $_formattedTime',
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                style: AppTypography.caption.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               TextButton(
@@ -311,13 +291,9 @@ class _EmailVerificationScreenState
                         _secondsRemaining > 0
                             ? 'Resend code in $_formattedTime'
                             : 'Resend code',
-                        style: TextStyle(
-                          color: _secondsRemaining > 0
+                        style: AppTypography.bodyMedium.copyWith(color: _secondsRemaining > 0
                               ? AppColors.textTertiary
-                              : AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
+                              : AppColors.primary, fontWeight: FontWeight.w700),
                       ),
               ),
               const SizedBox(height: 28),
@@ -336,7 +312,7 @@ class _EmailVerificationScreenState
                     Expanded(
                       child: Text(
                         'Please check your inbox and spam folder for the verification code.',
-                        style: TextStyle(fontSize: 12.5, color: AppColors.textPrimary.withValues(alpha: 0.8)),
+                        style: AppTypography.small.copyWith(color: AppColors.textPrimary.withValues(alpha: 0.8)),
                       ),
                     ),
                   ],
@@ -344,8 +320,6 @@ class _EmailVerificationScreenState
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

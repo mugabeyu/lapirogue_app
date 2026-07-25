@@ -7,6 +7,7 @@ import '../../../core/widgets/auth_sheet.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/reservation_provider.dart';
 import '../../../data/providers/messages_provider.dart';
+import '../../../core/theme/app_typography.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -81,7 +82,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     child: const Icon(Icons.chat_outlined, size: 48, color: AppColors.textTertiary),
                   ),
                   const SizedBox(height: 24),
-                  const Text('Messaging', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                  Text('Messaging', style: AppTypography.heading.copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   Text('Sign in to send messages to hotel staff', style: TextStyle(color: AppColors.textSecondary)),
                   const SizedBox(height: 24),
@@ -112,7 +113,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                   child: const Icon(Icons.lock_outline, size: 40, color: AppColors.textTertiary),
                 ),
                 const SizedBox(height: 20),
-                const Text('Messaging is available after booking.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                Text('Messaging is available after booking.', style: AppTypography.sectionTitle.copyWith(fontWeight: FontWeight.w600), textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => context.push('/rooms'),
@@ -150,7 +151,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                             child: const Icon(Icons.chat_outlined, size: 40, color: AppColors.textTertiary),
                           ),
                           const SizedBox(height: 16),
-                          const Text('No messages yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                          Text('No messages yet', style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w500)),
                           const SizedBox(height: 8),
                           Text('Send a message to hotel staff', style: TextStyle(color: AppColors.textSecondary)),
                         ],
@@ -249,10 +250,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
             children: [
               Text(
                 message,
-                style: TextStyle(color: isStaff ? AppColors.textPrimary : Colors.white, fontSize: 14),
+                style: AppTypography.caption.copyWith(color: isStaff ? AppColors.textPrimary : Colors.white),
               ),
               const SizedBox(height: 4),
-              Text(time, style: TextStyle(color: isStaff ? AppColors.textTertiary : Colors.white.withValues(alpha: 0.7), fontSize: 11)),
+              Text(time, style: AppTypography.small.copyWith(color: isStaff ? AppColors.textTertiary : Colors.white.withValues(alpha: 0.7))),
             ],
           ),
         ),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/menu_item.dart';
 import '../../booking/screens/booking_screen.dart';
+import '../../../core/theme/app_typography.dart';
 
 class FoodCard extends StatelessWidget {
   final MenuItem item;
@@ -59,7 +60,7 @@ class FoodCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(item.name, style: AppTypography.caption.copyWith(fontWeight: FontWeight.w500, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -69,19 +70,19 @@ class FoodCard extends StatelessWidget {
                           color: AppColors.background,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text(item.category, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                        child: Text(item.category, style: AppTypography.small.copyWith(color: AppColors.textSecondary)),
                       ),
                       const SizedBox(width: 8),
                       Icon(Icons.timer_outlined, size: 11, color: AppColors.textTertiary),
                       const SizedBox(width: 2),
-                      Text('${item.preparationMinutes} min', style: const TextStyle(fontSize: 10, color: AppColors.textTertiary)),
+                      Text('${item.preparationMinutes} min', style: AppTypography.small.copyWith(color: AppColors.textTertiary)),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('MUR ${item.price.toInt().toString()}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.darkNavy)),
+                      Text('MUR ${item.price.toInt().toString()}', style: AppTypography.bodyMedium.copyWith(color: AppColors.darkNavy)),
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
