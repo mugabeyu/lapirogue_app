@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/mystay/screens/my_stay_screen.dart';
 import '../../features/reservations/screens/reservations_screen.dart';
+import '../../features/reservations/screens/reservation_detail_screen.dart';
 import '../../features/reservations/screens/booking_confirmation_screen.dart';
 import '../../features/booking/screens/booking_screen.dart';
 import '../../features/messages/screens/messages_screen.dart';
@@ -30,6 +31,8 @@ import '../../features/schedule/screens/daily_schedule_screen.dart';
 import '../../features/payments/screens/payments_screen.dart';
 import '../../features/profile/screens/payment_methods_screen.dart';
 import '../../features/profile/screens/update_password_screen.dart';
+import '../../features/profile/screens/eco_points_screen.dart';
+import '../../features/profile/screens/settings_screen.dart';
 import '../../features/profile/screens/privacy_screen.dart';
 import '../../features/profile/screens/help_screen.dart';
 import '../../features/profile/screens/contact_support_screen.dart';
@@ -136,6 +139,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: ProfileScreen()),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/reservations/:id',
+
+        builder: (context, state) =>
+            ReservationDetailScreen(reservationId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/booking-confirmation',
@@ -256,6 +265,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/update-password',
 
         builder: (context, state) => const UpdatePasswordScreen(),
+      ),
+      GoRoute(
+        path: '/eco-points',
+
+        builder: (context, state) => const EcoPointsScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/payment-methods',

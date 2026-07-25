@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/models/reservation.dart';
+import '../../../core/utils/reservation_status.dart';
 
 class CurrentStayCard extends StatelessWidget {
   final Reservation reservation;
@@ -18,50 +19,12 @@ class CurrentStayCard extends StatelessWidget {
     this.roomImage,
   });
 
-  String get _statusLabel {
-    switch (reservation.status) {
-      case 'CHECKED_IN':
-        return 'Checked In';
-      case 'RESERVED':
-      case 'CONFIRMED':
-        return 'Reserved';
-      case 'CHECKED_OUT':
-      case 'COMPLETED':
-        return 'Checked Out';
-      case 'CANCELLED':
-        return 'Cancelled';
-      default:
-        return reservation.status;
-    }
-  }
-
-  Color get _statusColor {
-    switch (reservation.status) {
-      case 'CHECKED_IN':
-        return AppColors.statusInfo;
-      case 'CANCELLED':
-        return AppColors.statusCancelled;
-      default:
-        return AppColors.statusPending;
-    }
-  }
-
-  Color get _statusBgColor {
-    switch (reservation.status) {
-      case 'CHECKED_IN':
-        return AppColors.statusInfoBg;
-      case 'CANCELLED':
-        return AppColors.statusCancelledBg;
-      default:
-        return AppColors.statusPendingBg;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final nights = reservation.checkOut.difference(reservation.checkIn).inDays;
     final checkInStr = DateFormat('MMM dd').format(reservation.checkIn);
     final checkOutStr = DateFormat('MMM dd').format(reservation.checkOut);
+    final statusInfo = ReservationStatusInfo.forStatus(reservation.status);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,12 +38,12 @@ class CurrentStayCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _statusBgColor,
+                  color: statusInfo.backgroundColor,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  _statusLabel,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _statusColor),
+                  statusInfo.label,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: statusInfo.color),
                 ),
               ),
             ],

@@ -267,12 +267,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 20),
           _buildSection('Quick links', [
             _buildMenuItem(Icons.calendar_today_outlined, 'My reservations', () => context.push('/reservations')),
+            _buildMenuItem(Icons.eco_outlined, 'Eco-Points & rewards', () => context.push('/eco-points')),
             _buildMenuItem(Icons.receipt_long_outlined, 'Payments & billing', () => context.push('/payments')),
             _buildMenuItem(Icons.notifications_outlined, 'Notifications', () => context.push('/notifications')),
             _buildMenuItem(Icons.info_outline, 'Hotel information', () => context.push('/hotel-info')),
-            _buildMenuItem(Icons.lock_outline, 'Update password', () => context.push('/update-password')),
-            _buildMenuItem(Icons.star_outline, 'Leave a review', () => context.push('/feedback')),
-            _buildMenuItem(Icons.help_outline, 'Help & support', () => context.push('/help')),
+            _buildMenuItem(Icons.settings_outlined, 'Settings', () => context.push('/settings')),
+            _buildMenuItem(Icons.logout, 'Log out', () => _confirmSignOut(context, ref)),
           ]),
           const SizedBox(height: 12),
           _buildSection('Personal details', [
@@ -296,44 +296,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _buildRow(Icons.person_pin_outlined, 'Registered by', guest.createdByName ?? 'Self'),
             _buildRow(Icons.calendar_month_outlined, 'Member Since', guest.createdAt != null ? DateFormat('MMM dd, yyyy').format(guest.createdAt!) : 'N/A'),
           ]),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    title: const Text('Sign Out'),
-                    content: const Text('Are you sure you want to sign out?'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(ctx).pop();
-                          ref.read(authStateProvider.notifier).logout();
-                        },
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.statusCancelled, foregroundColor: Colors.white),
-                        child: const Text('Sign Out'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              icon: const Icon(Icons.logout, size: 18),
-              label: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.statusCancelled,
-                side: const BorderSide(color: AppColors.lightGray2),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-            ),
-          ),
           const SizedBox(height: 12),
           const Center(
             child: Text('La Pirogue Guest App', style: TextStyle(fontSize: 12, color: AppColors.textTertiary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmSignOut(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Log out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(authStateProvider.notifier).logout();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.statusCancelled, foregroundColor: Colors.white),
+            child: const Text('Log out'),
           ),
         ],
       ),

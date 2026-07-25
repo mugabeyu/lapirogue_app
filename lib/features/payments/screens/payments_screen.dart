@@ -105,6 +105,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                           ),
                         ],
                       ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: Text(
+                        'Payments are encrypted and processed securely. We never store full card details.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: AppTheme.textTertiary),
+                      ),
+                    ),
                   ],
                 ),
               ),

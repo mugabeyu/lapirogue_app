@@ -30,11 +30,11 @@ class QuickActionsRow extends StatelessWidget {
                   child: Column(
                     children: [
                       Container(
-                        width: 56,
-                        height: 56,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(color: AppColors.lightGray2),
                         ),
                         child: Icon(a.icon, color: AppColors.primary, size: 24),

@@ -9,10 +9,14 @@ import '../../../data/providers/notifications_provider.dart';
 /// the left, notification bell (with unread badge) on the right.
 class HeroSection extends ConsumerWidget {
   final String? firstName;
+  final String? lastName;
+  final String? imagePath;
 
   const HeroSection({
     super.key,
     this.firstName,
+    this.lastName,
+    this.imagePath,
     this.greeting = '',
     this.location = '',
     this.temperature = '',
@@ -99,53 +103,85 @@ class HeroSection extends ConsumerWidget {
                 ],
               ),
             ),
-            GestureDetector(
-              onTap: () => context.push('/notifications'),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.lightGray2),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: AppColors.textPrimary,
-                      size: 22,
-                    ),
-                  ),
-                  if (unreadCount > 0)
-                    Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(
-                          minWidth: 20,
-                          minHeight: 20,
-                        ),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () => context.push('/notifications'),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.lightGray2),
                         ),
-                        child: Center(
-                          child: Text(
-                            unreadCount > 9 ? '9+' : '$unreadCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                        child: const Icon(
+                          Icons.notifications_outlined,
+                          color: AppColors.textPrimary,
+                          size: 22,
+                        ),
+                      ),
+                      if (unreadCount > 0)
+                        Positioned(
+                          top: -2,
+                          right: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(
+                              minWidth: 20,
+                              minHeight: 20,
+                            ),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                unreadCount > 9 ? '9+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: () => context.push('/profile'),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.lightGray2),
+                      image: imagePath != null && imagePath!.isNotEmpty
+                          ? DecorationImage(image: NetworkImage(imagePath!), fit: BoxFit.cover)
+                          : null,
                     ),
-                ],
-              ),
+                    child: imagePath == null || imagePath!.isEmpty
+                        ? Center(
+                            child: Text(
+                              _initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+              ],
             ),
           ],
             ),
@@ -153,5 +189,11 @@ class HeroSection extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String get _initials {
+    final f = firstName != null && firstName!.isNotEmpty ? firstName![0] : 'G';
+    final l = lastName != null && lastName!.isNotEmpty ? lastName![0] : '';
+    return '$f$l'.toUpperCase();
   }
 }

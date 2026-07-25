@@ -12,9 +12,8 @@ import '../widgets/booking_card.dart';
 import '../widgets/current_stay_card.dart';
 import '../widgets/quick_actions_row.dart';
 import '../widgets/room_card.dart';
-import '../widgets/activity_card.dart';
+import '../widgets/experience_banner.dart';
 import '../widgets/food_card.dart';
-import '../widgets/special_request_banner.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -45,6 +44,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SliverToBoxAdapter(
             child: HeroSection(
               firstName: authState.guest?.firstName,
+              lastName: authState.guest?.lastName,
+              imagePath: authState.guest?.imagePath,
             ),
           ),
           SliverToBoxAdapter(
@@ -111,39 +112,14 @@ SliverToBoxAdapter(
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Activities', style: AppTypography.sectionTitle),
-                  TextButton(
-                    onPressed: () => context.push('/activities'),
-                    child: const Text('View All', style: TextStyle(fontSize: 13, color: AppColors.goldAccent, fontWeight: FontWeight.w500)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          activitiesAsync.when(
-            data: (activities) => SliverToBoxAdapter(
-              child: SizedBox(
-                height: 290,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: activities.length > 5 ? 5 : activities.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) => ActivityCard(activity: activities[index]),
+              padding: const EdgeInsets.fromLTRB(0, 28, 0, 0),
+              child: activitiesAsync.maybeWhen(
+                data: (activities) => ExperienceBanner(
+                  imageUrl: activities.isNotEmpty ? activities.first.imagePath : null,
                 ),
+                orElse: () => const ExperienceBanner(),
               ),
             ),
-            loading: () => const SliverToBoxAdapter(
-              child: SizedBox(
-                height: 290,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ),
-            error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -180,12 +156,6 @@ SliverToBoxAdapter(
               ),
             ),
             error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 28),
-              child: SpecialRequestBanner(),
-            ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],

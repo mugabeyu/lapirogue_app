@@ -31,8 +31,8 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      fontFamily: GoogleFonts.inter().fontFamily,
-      textTheme: GoogleFonts.interTextTheme(
+      fontFamily: GoogleFonts.roboto().fontFamily,
+      textTheme: GoogleFonts.robotoTextTheme(
         const TextTheme(
           headlineLarge: AppTypography.heading,
           headlineMedium: AppTypography.sectionTitle,
@@ -154,8 +154,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
-        labelStyle: AppTypography.caption.copyWith(color: AppColors.textSecondary),
-        hintStyle: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+        labelStyle: AppTypography.caption.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+        hintStyle: AppTypography.caption.copyWith(color: AppColors.textTertiary, fontWeight: FontWeight.bold),
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.lightGray2,

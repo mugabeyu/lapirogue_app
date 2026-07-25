@@ -11,6 +11,7 @@ import '../../../core/services/activity_service.dart';
 import '../../../core/services/schedule_service.dart';
 import '../../../core/services/session_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/reservation_status.dart';
 
 String formatDate(DateTime date) {
   return DateFormat('MMM dd, yyyy').format(date);
@@ -23,40 +24,6 @@ String shortRef(String value) {
 
 class ReservationsScreen extends ConsumerWidget {
   const ReservationsScreen({super.key});
-
-  Color _getStatusColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'CHECKED_IN':
-        return AppColors.statusInfo;
-      case 'RESERVED':
-      case 'CONFIRMED':
-        return AppColors.statusConfirmed;
-      case 'CHECKED_OUT':
-        return AppColors.statusNeutral;
-      case 'CANCELLED':
-      case 'NO_SHOW':
-        return AppColors.statusCancelled;
-      default:
-        return AppColors.statusPending;
-    }
-  }
-
-  Color _getStatusBgColor(String status) {
-    switch (status.toUpperCase()) {
-      case 'CHECKED_IN':
-        return AppColors.statusInfoBg;
-      case 'RESERVED':
-      case 'CONFIRMED':
-        return AppColors.statusConfirmedBg;
-      case 'CHECKED_OUT':
-        return AppColors.statusNeutralBg;
-      case 'CANCELLED':
-      case 'NO_SHOW':
-        return AppColors.statusCancelledBg;
-      default:
-        return AppColors.statusPendingBg;
-    }
-  }
 
   Future<List<Reservation>> _fetchGuestReservations(String guestId) async {
     try {
@@ -208,7 +175,10 @@ class ReservationsScreen extends ConsumerWidget {
                 itemCount: reservations.length,
                 itemBuilder: (context, index) {
                   final reservation = reservations[index];
-                  return Card(
+                  final statusInfo = ReservationStatusInfo.forStatus(reservation.status);
+                  return GestureDetector(
+                    onTap: () => context.push('/reservations/${reservation.id}'),
+                    child: Card(
                     margin: const EdgeInsets.only(bottom: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -233,13 +203,13 @@ class ReservationsScreen extends ConsumerWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: _getStatusBgColor(reservation.status),
+                                  color: statusInfo.backgroundColor,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  reservation.status,
+                                  statusInfo.label,
                                   style: TextStyle(
-                                    color: _getStatusColor(reservation.status),
+                                    color: statusInfo.color,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 12,
                                   ),
@@ -392,6 +362,7 @@ style: TextStyle(color: AppColors.textSecondary),
                           ),
                         ),
                       ],
+                    ),
                     ),
                   );
                 },

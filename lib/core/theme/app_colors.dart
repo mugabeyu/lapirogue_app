@@ -27,8 +27,8 @@ class AppColors {
   static const Color lightGray2 = Color(0xFFE5E7EB); // gray-200 (borders)
 
   static const Color textPrimary = Color(0xFF111827); // gray-900
-  static const Color textSecondary = Color(0xFF6B7280); // gray-500
-  static const Color textTertiary = Color(0xFF9CA3AF); // gray-400
+  static const Color textSecondary = Color(0xFF111827); // black (was gray-500)
+  static const Color textTertiary = Color(0xFF111827); // black (was gray-400)
   static const Color textOnPrimary = Colors.white;
 
   static const Color surfaceLight = Color(0xFFFFFFFF);

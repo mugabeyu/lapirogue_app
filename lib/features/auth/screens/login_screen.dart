@@ -44,65 +44,71 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authStateProvider);
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.darkNavy, AppColors.darkNavyDark],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
+      backgroundColor: AppColors.background,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Stack(
               children: [
-                const SizedBox(height: 40),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.asset(
-                    'assets/images/lapirogue_logo.jpg',
-                    height: 100,
-                    fit: BoxFit.contain,
+                Image.asset(
+                  'assets/images/home.jpeg',
+                  height: 260,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.black.withValues(alpha: 0), Colors.black.withValues(alpha: 0.6)],
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'WELCOME TO',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                        ),
+                        Text(
+                          'La Pirogue',
+                          style: AppTypography.heading.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'La Pirogue',
-                  style: AppTypography.heading.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  'Mauritius',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.goldAccent,
-                    letterSpacing: 4,
-                  ),
-                ),
-                const SizedBox(height: 48),
-                Form(
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: Column(
+                children: [
+                  const Text('Sign in to your account', style: AppTypography.sectionTitle),
+                  const SizedBox(height: 6),
+                  Text('Access your stay, dining and more.', style: AppTypography.body.copyWith(color: Color(0xFF6B7280))),
+                  const SizedBox(height: 28),
+                  Form(
                   key: _formKey,
                   child: Column(
                     children: [
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppColors.textPrimary),
                         decoration: InputDecoration(
                           hintText: 'Email address',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
-                          ),
-                          prefixIcon: Icon(
-                            Icons.email_outlined,
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
+                          hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                          prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF9CA3AF)),
                           filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.1),
+                          fillColor: AppColors.lightGray,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -114,7 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: const BorderSide(
-                              color: AppColors.goldAccent,
+                              color: AppColors.primary,
                               width: 1.5,
                             ),
                           ),
@@ -127,29 +133,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppColors.textPrimary),
                         decoration: InputDecoration(
                           hintText: 'Password',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
-                          ),
-                          prefixIcon: Icon(
-                            Icons.lock_outline,
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
+                          hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                          prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF9CA3AF)),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
-                              color: Colors.white.withValues(alpha: 0.5),
+                              color: Color(0xFF9CA3AF),
                             ),
                             onPressed: () => setState(
                               () => _obscurePassword = !_obscurePassword,
                             ),
                           ),
                           filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.1),
+                          fillColor: AppColors.lightGray,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -161,7 +162,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: const BorderSide(
-                              color: AppColors.goldAccent,
+                              color: AppColors.primary,
                               width: 1.5,
                             ),
                           ),
@@ -175,11 +176,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () => context.push('/forgot-password'),
-                          child: Text(
+                          child: const Text(
                             'Forgot Password?',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
+                            style: TextStyle(color: Color(0xFF6B7280)),
                           ),
                         ),
                       ),
@@ -189,13 +188,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: ElevatedButton(
                           onPressed: authState.isLoading ? null : _handleLogin,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.goldAccent,
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            elevation: 4,
+                            elevation: 0,
                           ),
                           child: authState.isLoading
                               ? const SizedBox(
@@ -252,18 +251,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       "Don't have an account? ",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
+                      style: TextStyle(color: Color(0xFF6B7280)),
                     ),
                     GestureDetector(
                       onTap: () => context.push('/register'),
                       child: const Text(
                         'Create Account',
                         style: TextStyle(
-                          color: AppColors.goldAccent,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -271,9 +268,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 40),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
