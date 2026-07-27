@@ -58,6 +58,54 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     '04:00 PM', '04:30 PM', '06:00 PM',
   ];
 
+  /// Registration closes shortly before a session starts, matching the rule
+  /// the hotel website enforces, so a guest cannot sign up for something
+  /// already under way.
+  static const _registrationCutoff = Duration(minutes: 10);
+
+  /// Midnight today — the earliest day that can be booked, even when the stay
+  /// began earlier in the week.
+  DateTime get _today {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  /// First bookable day: the later of check-in and today. A stay that started
+  /// days ago is still current, but its past days cannot be booked.
+  DateTime get _firstBookableDay {
+    final start = _stayStart;
+    if (start == null) return _today;
+    final startDay = DateTime(start.year, start.month, start.day);
+    return startDay.isAfter(_today) ? startDay : _today;
+  }
+
+  DateTime get _lastBookableDay =>
+      _stayEnd ?? _firstBookableDay.add(const Duration(days: 30));
+
+  bool get _stayHasBookableDays =>
+      !_firstBookableDay.isAfter(_lastBookableDay);
+
+  DateTime _slotStart(DateTime day, String slot) {
+    final parts = _parseTimeSlot(slot).split(':');
+    return DateTime(
+      day.year,
+      day.month,
+      day.day,
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+    );
+  }
+
+  /// Slots still open on the selected day. On today's date the earlier
+  /// sessions have already started, and offering them produced a booking the
+  /// server could only reject.
+  List<String> get _availableTimeSlots {
+    return _timeSlots
+        .where((slot) => _slotStart(_selectedDate, slot)
+            .difference(DateTime.now()) >= _registrationCutoff)
+        .toList();
+  }
+
   static const _pickupPoints = [
     'Hotel Lobby', 'Beach Hut', 'Pool Deck', 'Marina Pier',
   ];
@@ -78,13 +126,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     if (reservation != null) {
       _stayStart = reservation.checkIn;
       _stayEnd = reservation.checkOut;
-      _selectedDate = reservation.checkIn.isAfter(DateTime.now())
-          ? reservation.checkIn
-          : DateTime.now();
-    } else {
-      _selectedDate = DateTime.now();
     }
-    _selectedTime = _timeSlots[0];
+    _selectedDate = _firstBookableDay;
+
+    // Start on a slot that is actually still open today, rather than the
+    // first of the day — which by the afternoon has long since passed.
+    final open = _availableTimeSlots;
+    _selectedTime = open.isNotEmpty ? open.first : _timeSlots.last;
   }
 
   @override
@@ -140,11 +188,24 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   Future<void> _pickDate() async {
-    final first = _stayStart ?? DateTime.now();
-    final last = _stayEnd ?? first.add(const Duration(days: 30));
+    final first = _firstBookableDay;
+    final last = _lastBookableDay;
+
+    if (!_stayHasBookableDays) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your stay has ended, so there are no dates left to book.')),
+      );
+      return;
+    }
+
+    // showDatePicker asserts that initialDate sits inside the range.
+    final initial = _selectedDate.isBefore(first)
+        ? first
+        : (_selectedDate.isAfter(last) ? last : _selectedDate);
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: initial,
       firstDate: first,
       lastDate: last,
       builder: (context, child) => Theme(
@@ -159,11 +220,33 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       ),
     );
     if (picked != null) {
-      setState(() => _selectedDate = picked);
+      setState(() {
+        _selectedDate = picked;
+        // Moving to a new day changes which sessions are still open.
+        final open = _availableTimeSlots;
+        if (open.isNotEmpty && !open.contains(_selectedTime)) {
+          _selectedTime = open.first;
+        }
+      });
     }
   }
 
   Future<void> _submitBooking() async {
+    // The form may have been open a while; re-check rather than sending a
+    // slot that has since passed and letting the server reject it.
+    if (!_isCustom &&
+        _slotStart(_selectedDate, _selectedTime)
+                .difference(DateTime.now()) <
+            _registrationCutoff) {
+      await showResultOverlay(
+        context,
+        success: false,
+        title: 'That session has started',
+        message: 'Pick a later time or date and try again.',
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     try {
       final guest = await SessionService.getCurrentGuest();
@@ -746,6 +829,31 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   }
 
   Widget _buildTimeSelector() {
+    final slots = _availableTimeSlots;
+
+    if (slots.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warningSoft,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.schedule, color: AppColors.warning, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Every session today has already started. Choose a later date.',
+                style: AppTypography.caption.copyWith(color: AppColors.warning),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
@@ -765,10 +873,10 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           Expanded(
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: _selectedTime,
+                value: slots.contains(_selectedTime) ? _selectedTime : slots.first,
                 isExpanded: true,
                 style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
-                items: _timeSlots.map((slot) {
+                items: slots.map((slot) {
                   return DropdownMenuItem(value: slot, child: Text(slot));
                 }).toList(),
                 onChanged: (v) {
