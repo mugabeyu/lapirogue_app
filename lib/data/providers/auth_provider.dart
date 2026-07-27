@@ -273,9 +273,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return;
       }
 
+      // The countdown is only worth showing on the last chance. Announcing it
+      // from the first wrong password reads as a threat during an ordinary
+      // typo, and tells anyone guessing exactly how many tries they have left.
       final remaining = attemptState?['remainingAttempts'] as int?;
-      final suffix = remaining != null
-          ? ' $remaining attempt${remaining == 1 ? '' : 's'} remaining before your account is temporarily locked.'
+      final suffix = remaining == 1
+          ? ' This is your last attempt before your account is temporarily locked.'
           : '';
       state = state.copyWith(isLoading: false, error: 'Invalid credentials.$suffix');
     }
