@@ -49,15 +49,14 @@ class ActivityService {
       final ecoPoints = (activityPrice / 100).ceil() * 5;
       final pointsToAward = ecoPoints > 0 ? ecoPoints : 25;
 
-      await _client.from('guest_eco_point_events').upsert({
-        'guest_id': guestId,
-        'source_type': 'ACTIVITY',
-        'source_record_id': bookingId,
-        'source_label': 'Completed activity: $activityName',
-        'points': pointsToAward,
-      }, onConflict: 'source_type,source_record_id');
+      final result = await _client.rpc('log_eco_points', params: {
+        'p_source_type': 'ACTIVITY',
+        'p_source_record_id': bookingId,
+        'p_source_label': 'Completed activity: $activityName',
+        'p_points': pointsToAward,
+      });
 
-      return true;
+      return result != null && result['success'] == true;
     } catch (e) {
       if (kDebugMode) debugPrint('markActivityCompleted error: $e');
       return false;
@@ -133,14 +132,13 @@ class EcoPointsService {
     String? sourceRecordId,
   }) async {
     try {
-      await _client.from('guest_eco_point_events').upsert({
-        'guest_id': guestId,
-        'source_type': sourceType,
-        'source_record_id': sourceRecordId ?? '',
-        'source_label': description,
-        'points': points,
-      }, onConflict: 'source_type,source_record_id');
-      return true;
+      final result = await _client.rpc('log_eco_points', params: {
+        'p_source_type': sourceType,
+        'p_source_record_id': sourceRecordId ?? '',
+        'p_source_label': description,
+        'p_points': points,
+      });
+      return result != null && result['success'] == true;
     } catch (e) {
       return false;
     }
@@ -176,17 +174,16 @@ class EcoPointsService {
       final actionPoints = actionResponse['default_points'] ?? 0;
       final carbonOffset = actionResponse['carbon_offset_kg'] ?? 0;
 
-      await _client.from('guest_eco_point_events').insert({
-        'guest_id': guestId,
-        'activity_id': actionId,
-        'source_type': 'ECO_ACTION',
-        'source_record_id': actionId,
-        'source_label': 'Participated in: $actionName',
-        'points': actionPoints,
-        'carbon_offset_kg': carbonOffset,
+      final result = await _client.rpc('log_eco_action', params: {
+        'p_action_id': actionId,
+        'p_source_type': 'ECO_ACTION',
+        'p_source_record_id': actionId,
+        'p_source_label': 'Participated in: $actionName',
+        'p_points': actionPoints,
+        'p_carbon_offset_kg': carbonOffset,
       });
 
-      return true;
+      return result != null && result['success'] == true;
     } catch (e) {
       return false;
     }

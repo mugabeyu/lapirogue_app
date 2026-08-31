@@ -51,7 +51,16 @@ class _EcoPointsScreenState extends State<EcoPointsScreen> {
       _balance = results[0] as int;
       _tier = results[1] as String;
       _transactions = transactions;
-      _ecoActions = results[3] as List<EcoAction>;
+      _ecoActions = (results[3] as List<EcoAction>)
+          .where((a) {
+            final name = a.name.trim().toLowerCase();
+            return name != 'room service' &&
+                name != 'room service today' &&
+                name != 'reuse linens' &&
+                name != 'reuse towels' &&
+                name != 'water conservation';
+          })
+          .toList();
       _carbonOffsetKg = transactions.fold(0, (sum, t) => sum + (t.carbonOffsetKg ?? 0));
       _isLoading = false;
     });
@@ -180,18 +189,34 @@ class _EcoPointsScreenState extends State<EcoPointsScreen> {
                               ),
                               const SizedBox(width: 12),
                               SizedBox(
-                                height: 34,
+                                // Fixed footprint. The app wide elevated button
+                                // theme asks for a 52 point minimum height and
+                                // generous padding, which in this narrow row
+                                // starved the Expanded label and wrapped the
+                                // action name one character per line.
+                                width: 104,
+                                height: 38,
                                 child: ElevatedButton(
                                   onPressed: _loggingActionId == action.id ? null : () => _logAction(action),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.ecoGreen,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
                                   child: _loggingActionId == action.id
                                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                      : Text('I did this', style: AppTypography.small.copyWith(fontWeight: FontWeight.w600)),
+                                      // The scale's small style carries a grey
+                                      // colour, which would otherwise override
+                                      // the button's white foreground and leave
+                                      // the label washed out on the green fill.
+                                      : Text('I did this',
+                                          style: AppTypography.small.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          )),
                                 ),
                               ),
                             ],

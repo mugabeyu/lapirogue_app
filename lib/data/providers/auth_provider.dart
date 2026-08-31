@@ -142,9 +142,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   void _listenForAuthChanges() {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
-      // A recovery deep link produces this event directly; the OTP path sets
-      // the flag itself before verifying, since that emits a plain sign-in.
+      // A recovery deep link produces this event directly; the programmatic
+      // `verifyOTP(type: recovery)` path instead yields a generic `signedIn`
+      // (sometimes preceded by `tokenRefreshed`). To keep both paths out of
+      // the rest of the app until the new password has been saved, any
+      // session whose JWT lists a `recovery` AMR is also treated as a
+      // recovery session here.
       if (data.event == AuthChangeEvent.passwordRecovery) {
+        _inPasswordRecovery = true;
+        await _setPersistedRecoveryFlag(true);
+      } else if (data.session != null &&
+          !_inPasswordRecovery &&
+          _isRecoverySession(data.session!)) {
         _inPasswordRecovery = true;
         await _setPersistedRecoveryFlag(true);
       }
@@ -165,6 +174,52 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       }
     });
+  }
+
+  /// True when the session's JWT was issued by a password-recovery flow.
+  ///
+  /// Supabase stamps the access token's `amr` (Authentication Methods
+  /// Reference) claim with `[{ method: 'recovery', ... }]` for sessions
+  /// created by either the deep-link flow or a programmatic
+  /// `verifyOTP(type: recovery)` call. We decode the JWT here because
+  /// `Session` does not expose the claim directly, and the event name
+  /// (`passwordRecovery` vs `signedIn`) is unreliable across SDK versions
+  /// and paths.
+  bool _isRecoverySession(Session session) {
+    try {
+      final payload = _decodeJwtPayload(session.accessToken);
+      if (payload == null) return false;
+      final amr = payload['amr'];
+      if (amr is List) {
+        for (final entry in amr) {
+          if (entry is Map && entry['method'] == 'recovery') {
+            return true;
+          }
+        }
+      }
+    } catch (_) {
+      // Malformed token — fall through to false.
+    }
+    return false;
+  }
+
+  /// Minimal JWT payload decoder. We only need the JSON body of the access
+  /// token to read the `amr` claim, so a hand-rolled base64 decode keeps
+  /// us from adding a direct dependency on `jwt_decode`.
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) return null;
+    var payload = parts[1];
+    // base64url -> base64
+    payload = payload.replaceAll('-', '+').replaceAll('_', '/');
+    while (payload.length % 4 != 0) {
+      payload += '=';
+    }
+    final bytes = base64Decode(payload);
+    final json = jsonDecode(utf8.decode(bytes));
+    if (json is Map<String, dynamic>) return json;
+    if (json is Map) return Map<String, dynamic>.from(json);
+    return null;
   }
 
   /// Call before verifying a recovery code, so the session it creates does not

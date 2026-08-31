@@ -15,7 +15,6 @@ import '../../features/rooms/screens/rooms_list_screen.dart';
 import '../../features/dining/screens/dining_screen.dart';
 import '../../features/activities/screens/activities_screen.dart';
 import '../../features/spa/screens/spa_screen.dart';
-import '../../features/gallery/screens/gallery_screen.dart';
 import '../../features/room_service/screens/room_service_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/orders/screens/orders_screen.dart';
@@ -239,11 +238,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/spa',
         
         builder: (context, state) => const SpaScreen(),
-      ),
-      GoRoute(
-        path: '/gallery',
-        
-        builder: (context, state) => const GalleryScreen(),
       ),
       GoRoute(
         path: '/room-service',
